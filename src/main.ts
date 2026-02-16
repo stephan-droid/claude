@@ -3,6 +3,7 @@ import { Renderer } from './renderer';
 import { FURNITURE_CATALOG, getCatalogByCategory, CATEGORY_LABELS, getDefinitionById } from './catalog';
 import { FurnitureCategory, FurnitureDefinition, Point } from './types';
 import { exportProject, importProject, importFloorPlan, exportAsSVG } from './io';
+import { exportAsPDF } from './pdf';
 
 // ─── CSS einfügen ───────────────────────────────────────────
 const style = document.createElement('style');
@@ -314,11 +315,11 @@ const app = document.getElementById('app')!;
 app.innerHTML = `
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1>Raumplaner</h1>
-      <p>Grundrisse virtuell einrichten</p>
+      <h1>Schulraumplaner</h1>
+      <p>Fachräume virtuell einrichten</p>
     </div>
     <div class="sidebar-search">
-      <input type="text" id="searchInput" placeholder="Möbel suchen..." />
+      <input type="text" id="searchInput" placeholder="Ausstattung suchen..." />
     </div>
     <div class="catalog" id="catalog"></div>
   </div>
@@ -446,10 +447,11 @@ function renderToolbar() {
       <button id="importProject" title="Projekt laden">📂 Laden</button>
       <button id="exportProject" title="Projekt speichern">💾 Speichern</button>
       <button id="exportSVG" title="Als SVG exportieren">🖼 SVG</button>
+      <button id="exportPDF" title="Als PDF herunterladen">📄 PDF</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
-      <button id="clearAll" title="Alle Möbel entfernen">🗑 Leeren</button>
+      <button id="clearAll" title="Alle Ausstattung entfernen">🗑 Leeren</button>
     </div>
   `;
 
@@ -469,8 +471,9 @@ function renderToolbar() {
   toolbarEl.querySelector('#importProject')?.addEventListener('click', () => importProject());
   toolbarEl.querySelector('#exportProject')?.addEventListener('click', () => exportProject());
   toolbarEl.querySelector('#exportSVG')?.addEventListener('click', () => exportAsSVG());
+  toolbarEl.querySelector('#exportPDF')?.addEventListener('click', () => exportAsPDF());
   toolbarEl.querySelector('#clearAll')?.addEventListener('click', () => {
-    if (confirm('Alle platzierten Möbel entfernen?')) store.clearFurniture();
+    if (confirm('Alle platzierten Ausstattung entfernen?')) store.clearFurniture();
   });
 }
 
@@ -525,7 +528,7 @@ function renderStatusbar() {
   statusbarEl.innerHTML = `
     <span>Grundriss: ${state.floorPlan.name}</span>
     <span>Räume: ${roomCount}</span>
-    <span>Möbel: ${furnCount}</span>
+    <span>Ausstattung: ${furnCount}</span>
     <span>Zoom: ${Math.round(state.zoom * 100)}%</span>
     <span>Raster: ${state.snapToGrid ? 'Ein' : 'Aus'} (${state.gridSize}cm)</span>
   `;

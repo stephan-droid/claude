@@ -1,73 +1,110 @@
 import { FurnitureCategory, FurnitureDefinition } from './types';
 
 export const CATEGORY_LABELS: Record<FurnitureCategory, string> = {
-  sitzmoebel: 'Sitzmöbel',
-  tische: 'Tische',
-  schraenke: 'Schränke',
-  betten: 'Betten',
-  kueche: 'Küche',
-  bad: 'Bad',
-  elektronik: 'Elektronik',
-  dekoration: 'Dekoration',
+  allgemein: 'Allgemein / Klassenzimmer',
+  physik: 'Physik',
+  chemie: 'Chemie',
+  kunst: 'Kunst',
+  musik: 'Musik',
+  informatik: 'Informatik',
+  sport: 'Sport / Turnhalle',
+  verwaltung: 'Verwaltung / Lehrerzimmer',
 };
 
 export const FURNITURE_CATALOG: FurnitureDefinition[] = [
-  // Sitzmöbel
-  { id: 'sofa-3', name: 'Sofa (3-Sitzer)', category: 'sitzmoebel', width: 220, height: 90, color: '#6b8cae', icon: '🛋️' },
-  { id: 'sofa-2', name: 'Sofa (2-Sitzer)', category: 'sitzmoebel', width: 160, height: 85, color: '#7a9bb5', icon: '🛋️' },
-  { id: 'sessel', name: 'Sessel', category: 'sitzmoebel', width: 85, height: 85, color: '#8baabf', icon: '🪑' },
-  { id: 'stuhl', name: 'Stuhl', category: 'sitzmoebel', width: 45, height: 45, color: '#a0522d', icon: '🪑' },
-  { id: 'hocker', name: 'Hocker', category: 'sitzmoebel', width: 40, height: 40, color: '#b8860b', icon: '🪑' },
-  { id: 'ecksofa', name: 'Ecksofa', category: 'sitzmoebel', width: 260, height: 200, color: '#5a7a9a', icon: '🛋️' },
+  // ── Allgemein / Klassenzimmer ──
+  { id: 'schuelertisch-1', name: 'Schülertisch (Einzel)', category: 'allgemein', width: 70, height: 50, color: '#d2b48c', icon: '📐' },
+  { id: 'schuelertisch-2', name: 'Schülertisch (Doppel)', category: 'allgemein', width: 130, height: 50, color: '#c4a882', icon: '📐' },
+  { id: 'schuelerstuhl', name: 'Schülerstuhl', category: 'allgemein', width: 42, height: 42, color: '#4a90d9', icon: '🪑' },
+  { id: 'lehrerpult', name: 'Lehrerpult', category: 'allgemein', width: 160, height: 70, color: '#8b7355', icon: '🏫' },
+  { id: 'lehrerstuhl', name: 'Lehrerstuhl (Dreh)', category: 'allgemein', width: 50, height: 50, color: '#333', icon: '🪑' },
+  { id: 'tafel', name: 'Schultafel', category: 'allgemein', width: 300, height: 15, color: '#2d5a27', icon: '📝' },
+  { id: 'whiteboard', name: 'Whiteboard', category: 'allgemein', width: 240, height: 12, color: '#f0f0f0', icon: '🤍' },
+  { id: 'smartboard', name: 'Smartboard / Digitaltafel', category: 'allgemein', width: 200, height: 15, color: '#2c2c2c', icon: '📺' },
+  { id: 'beamer', name: 'Deckenbeamer', category: 'allgemein', width: 35, height: 30, color: '#555', icon: '📽️' },
+  { id: 'buecherregal', name: 'Bücherregal', category: 'allgemein', width: 100, height: 35, color: '#a0956b', icon: '📚' },
+  { id: 'materialschrank', name: 'Materialschrank', category: 'allgemein', width: 100, height: 50, color: '#8b8068', icon: '🗄️' },
+  { id: 'garderobe', name: 'Garderobenhaken-Leiste', category: 'allgemein', width: 150, height: 10, color: '#999', icon: '🧥' },
+  { id: 'papierkorb', name: 'Papierkorb', category: 'allgemein', width: 30, height: 30, color: '#666', icon: '🗑️' },
+  { id: 'overheadprojektor', name: 'Overheadprojektor', category: 'allgemein', width: 40, height: 40, color: '#888', icon: '💡' },
 
-  // Tische
-  { id: 'esstisch-6', name: 'Esstisch (6 Pers.)', category: 'tische', width: 180, height: 90, color: '#deb887', icon: '🪵' },
-  { id: 'esstisch-4', name: 'Esstisch (4 Pers.)', category: 'tische', width: 120, height: 80, color: '#d2b48c', icon: '🪵' },
-  { id: 'couchtisch', name: 'Couchtisch', category: 'tische', width: 120, height: 60, color: '#c4a882', icon: '🪵' },
-  { id: 'schreibtisch', name: 'Schreibtisch', category: 'tische', width: 140, height: 70, color: '#b89e78', icon: '🖥️' },
-  { id: 'beistelltisch', name: 'Beistelltisch', category: 'tische', width: 50, height: 50, color: '#cdb79e', icon: '🪵' },
-  { id: 'stehtisch', name: 'Stehtisch', category: 'tische', width: 70, height: 70, color: '#c8a96e', icon: '🪵' },
+  // ── Physik ──
+  { id: 'physik-demo-tisch', name: 'Demonstrationstisch', category: 'physik', width: 200, height: 80, color: '#4a4a4a', icon: '🔬' },
+  { id: 'physik-schuelertisch', name: 'Experimentiertisch', category: 'physik', width: 140, height: 70, color: '#5a5a5a', icon: '⚗️' },
+  { id: 'physik-strom', name: 'Stromversorgung (Labortisch)', category: 'physik', width: 60, height: 40, color: '#e8c840', icon: '⚡' },
+  { id: 'physik-schrank', name: 'Geräteschrank Physik', category: 'physik', width: 120, height: 55, color: '#7a7a7a', icon: '🗄️' },
+  { id: 'physik-sammlung', name: 'Sammlungsschrank', category: 'physik', width: 100, height: 50, color: '#6a6a6a', icon: '🗄️' },
+  { id: 'physik-waage', name: 'Feinwaage (Tischgerät)', category: 'physik', width: 30, height: 25, color: '#aaa', icon: '⚖️' },
+  { id: 'physik-optikbank', name: 'Optische Bank', category: 'physik', width: 150, height: 15, color: '#888', icon: '🔭' },
+  { id: 'physik-oszilloskop', name: 'Oszilloskop-Arbeitsplatz', category: 'physik', width: 60, height: 50, color: '#3a5a3a', icon: '📊' },
+  { id: 'physik-verdunkelung', name: 'Verdunkelungsvorhang', category: 'physik', width: 200, height: 5, color: '#222', icon: '🌑' },
 
-  // Schränke
-  { id: 'kleiderschrank-2', name: 'Kleiderschrank (2-türig)', category: 'schraenke', width: 100, height: 60, color: '#8b7355', icon: '🗄️' },
-  { id: 'kleiderschrank-3', name: 'Kleiderschrank (3-türig)', category: 'schraenke', width: 150, height: 60, color: '#7d6548', icon: '🗄️' },
-  { id: 'kommode', name: 'Kommode', category: 'schraenke', width: 80, height: 45, color: '#9b8b75', icon: '🗄️' },
-  { id: 'regal', name: 'Bücherregal', category: 'schraenke', width: 80, height: 35, color: '#a0956b', icon: '📚' },
-  { id: 'sideboard', name: 'Sideboard', category: 'schraenke', width: 160, height: 45, color: '#8b8068', icon: '🗄️' },
-  { id: 'vitrine', name: 'Vitrine', category: 'schraenke', width: 80, height: 40, color: '#9e9080', icon: '🗄️' },
+  // ── Chemie ──
+  { id: 'chemie-demo-tisch', name: 'Demo-Tisch mit Abzug', category: 'chemie', width: 200, height: 90, color: '#3a3a3a', icon: '🧪' },
+  { id: 'chemie-schuelertisch', name: 'Labortisch (Schüler)', category: 'chemie', width: 140, height: 70, color: '#4a5a4a', icon: '🧫' },
+  { id: 'abzug', name: 'Abzugshaube', category: 'chemie', width: 120, height: 80, color: '#c0c0c0', icon: '🌬️' },
+  { id: 'chemie-spuele', name: 'Laborspüle', category: 'chemie', width: 60, height: 50, color: '#b0c0d0', icon: '🚰' },
+  { id: 'chemie-schrank', name: 'Chemikalienschrank', category: 'chemie', width: 100, height: 55, color: '#c8a030', icon: '☣️' },
+  { id: 'chemie-saeuren', name: 'Säureschrank', category: 'chemie', width: 60, height: 55, color: '#d04040', icon: '⚠️' },
+  { id: 'chemie-gasflasche', name: 'Gasflaschenschrank', category: 'chemie', width: 50, height: 50, color: '#4060a0', icon: '🔥' },
+  { id: 'chemie-notdusche', name: 'Notdusche', category: 'chemie', width: 40, height: 40, color: '#40c040', icon: '🚿' },
+  { id: 'chemie-augendusche', name: 'Augendusche', category: 'chemie', width: 25, height: 20, color: '#40a040', icon: '👁️' },
+  { id: 'chemie-loescher', name: 'Feuerlöscher', category: 'chemie', width: 20, height: 20, color: '#e03030', icon: '🧯' },
+  { id: 'chemie-glasgeraete', name: 'Glasgeräteschrank', category: 'chemie', width: 100, height: 45, color: '#a8b8c8', icon: '🧪' },
 
-  // Betten
-  { id: 'doppelbett', name: 'Doppelbett', category: 'betten', width: 180, height: 210, color: '#b0c4de', icon: '🛏️' },
-  { id: 'einzelbett', name: 'Einzelbett', category: 'betten', width: 100, height: 210, color: '#a8b8cc', icon: '🛏️' },
-  { id: 'kinderbett', name: 'Kinderbett', category: 'betten', width: 70, height: 140, color: '#c0d0e0', icon: '🛏️' },
-  { id: 'nachttisch', name: 'Nachttisch', category: 'betten', width: 45, height: 40, color: '#9b8b75', icon: '🪵' },
+  // ── Kunst ──
+  { id: 'kunst-staffelei', name: 'Staffelei', category: 'kunst', width: 60, height: 55, color: '#b8860b', icon: '🎨' },
+  { id: 'kunst-arbeitstisch', name: 'Kunst-Arbeitstisch', category: 'kunst', width: 150, height: 80, color: '#c0a070', icon: '🖌️' },
+  { id: 'kunst-hocker', name: 'Malhocker', category: 'kunst', width: 35, height: 35, color: '#a0522d', icon: '🪑' },
+  { id: 'kunst-spuele', name: 'Waschbecken (Kunst)', category: 'kunst', width: 80, height: 50, color: '#b0c8e0', icon: '🚰' },
+  { id: 'kunst-materialregal', name: 'Materialregal', category: 'kunst', width: 120, height: 40, color: '#a09060', icon: '🗄️' },
+  { id: 'kunst-trockenregal', name: 'Trockenregal', category: 'kunst', width: 100, height: 50, color: '#b0a080', icon: '🖼️' },
+  { id: 'kunst-brennofen', name: 'Brennofen (Keramik)', category: 'kunst', width: 70, height: 70, color: '#c84020', icon: '🔥' },
+  { id: 'kunst-toepferscheibe', name: 'Töpferscheibe', category: 'kunst', width: 60, height: 60, color: '#8a7a6a', icon: '🏺' },
+  { id: 'kunst-druckpresse', name: 'Druckpresse', category: 'kunst', width: 100, height: 70, color: '#5a5a5a', icon: '🖨️' },
+  { id: 'kunst-schneidemaschine', name: 'Schneidemaschine', category: 'kunst', width: 80, height: 50, color: '#707070', icon: '✂️' },
 
-  // Küche
-  { id: 'kuechenzeile', name: 'Küchenzeile', category: 'kueche', width: 240, height: 60, color: '#c0c0c0', icon: '🍳' },
-  { id: 'kuehlschrank', name: 'Kühlschrank', category: 'kueche', width: 60, height: 65, color: '#e8e8e8', icon: '🧊' },
-  { id: 'herd', name: 'Herd/Ofen', category: 'kueche', width: 60, height: 60, color: '#404040', icon: '♨️' },
-  { id: 'spuelmaschine', name: 'Spülmaschine', category: 'kueche', width: 60, height: 60, color: '#d0d0d0', icon: '🫧' },
-  { id: 'kuecheninsel', name: 'Kücheninsel', category: 'kueche', width: 150, height: 80, color: '#b8b8b8', icon: '🍽️' },
+  // ── Musik ──
+  { id: 'musik-klavier', name: 'Klavier / Flügel', category: 'musik', width: 150, height: 160, color: '#1a1a1a', icon: '🎹' },
+  { id: 'musik-keyboard', name: 'Keyboard (auf Ständer)', category: 'musik', width: 130, height: 40, color: '#2a2a2a', icon: '🎹' },
+  { id: 'musik-stuhl', name: 'Musikstuhl (stapelbar)', category: 'musik', width: 42, height: 42, color: '#333', icon: '🪑' },
+  { id: 'musik-notenstaender', name: 'Notenständer', category: 'musik', width: 25, height: 25, color: '#444', icon: '🎵' },
+  { id: 'musik-schlagzeug', name: 'Schlagzeug', category: 'musik', width: 150, height: 130, color: '#8b0000', icon: '🥁' },
+  { id: 'musik-instrumentenschrank', name: 'Instrumentenschrank', category: 'musik', width: 150, height: 55, color: '#6a5a4a', icon: '🎸' },
+  { id: 'musik-notenschrank', name: 'Notenschrank', category: 'musik', width: 100, height: 45, color: '#7a6a5a', icon: '🎼' },
+  { id: 'musik-dirigentenpult', name: 'Dirigentenpult', category: 'musik', width: 50, height: 45, color: '#5a4a3a', icon: '🎶' },
 
-  // Bad
-  { id: 'badewanne', name: 'Badewanne', category: 'bad', width: 170, height: 75, color: '#e0f0ff', icon: '🛁' },
-  { id: 'dusche', name: 'Duschkabine', category: 'bad', width: 90, height: 90, color: '#d0e8f8', icon: '🚿' },
-  { id: 'waschbecken', name: 'Waschbecken', category: 'bad', width: 60, height: 45, color: '#f0f8ff', icon: '🚰' },
-  { id: 'toilette', name: 'Toilette', category: 'bad', width: 40, height: 65, color: '#f5f5f5', icon: '🚽' },
-  { id: 'waschmaschine', name: 'Waschmaschine', category: 'bad', width: 60, height: 60, color: '#e0e0e0', icon: '🫧' },
+  // ── Informatik ──
+  { id: 'info-pc-tisch', name: 'PC-Arbeitsplatz', category: 'informatik', width: 120, height: 70, color: '#6a7a8a', icon: '🖥️' },
+  { id: 'info-monitor', name: 'Monitor', category: 'informatik', width: 55, height: 10, color: '#2a2a2a', icon: '🖥️' },
+  { id: 'info-pc-tower', name: 'PC-Tower (unter Tisch)', category: 'informatik', width: 20, height: 45, color: '#3a3a3a', icon: '💻' },
+  { id: 'info-drucker', name: 'Netzwerkdrucker', category: 'informatik', width: 50, height: 45, color: '#555', icon: '🖨️' },
+  { id: 'info-serverschrank', name: 'Serverschrank', category: 'informatik', width: 60, height: 80, color: '#2a3a4a', icon: '🖧' },
+  { id: 'info-laptop-wagen', name: 'Laptop-Ladewagen', category: 'informatik', width: 80, height: 55, color: '#5a6a7a', icon: '💻' },
+  { id: 'info-3d-drucker', name: '3D-Drucker', category: 'informatik', width: 50, height: 50, color: '#4a5a6a', icon: '🖨️' },
+  { id: 'info-switch', name: 'Netzwerk-Switch (Wandm.)', category: 'informatik', width: 50, height: 10, color: '#2a4a6a', icon: '🔌' },
 
-  // Elektronik
-  { id: 'fernseher', name: 'TV / Fernseher', category: 'elektronik', width: 120, height: 10, color: '#2c2c2c', icon: '📺' },
-  { id: 'tv-moebel', name: 'TV-Möbel', category: 'elektronik', width: 150, height: 45, color: '#5c5c5c', icon: '📺' },
-  { id: 'pc-turm', name: 'PC-Tower', category: 'elektronik', width: 20, height: 45, color: '#3c3c3c', icon: '🖥️' },
-  { id: 'drucker', name: 'Drucker', category: 'elektronik', width: 45, height: 35, color: '#4c4c4c', icon: '🖨️' },
+  // ── Sport / Turnhalle ──
+  { id: 'sport-turnmatte', name: 'Turnmatte', category: 'sport', width: 200, height: 125, color: '#2060c0', icon: '🤸' },
+  { id: 'sport-weichboden', name: 'Weichbodenmatte', category: 'sport', width: 200, height: 150, color: '#c04040', icon: '🟥' },
+  { id: 'sport-kasten', name: 'Sprungkasten', category: 'sport', width: 60, height: 110, color: '#a0522d', icon: '🏋️' },
+  { id: 'sport-bank', name: 'Turnbank', category: 'sport', width: 30, height: 300, color: '#b8860b', icon: '🪵' },
+  { id: 'sport-barren', name: 'Barren', category: 'sport', width: 70, height: 200, color: '#8b7355', icon: '🤸' },
+  { id: 'sport-reck', name: 'Reck', category: 'sport', width: 30, height: 250, color: '#888', icon: '🤸' },
+  { id: 'sport-tor', name: 'Handballtor', category: 'sport', width: 300, height: 30, color: '#d04040', icon: '🥅' },
+  { id: 'sport-basketballkorb', name: 'Basketballkorb', category: 'sport', width: 120, height: 10, color: '#ff8c00', icon: '🏀' },
+  { id: 'sport-geraetewagen', name: 'Gerätewagen', category: 'sport', width: 120, height: 60, color: '#666', icon: '🏐' },
+  { id: 'sport-sprossenwand', name: 'Sprossenwand', category: 'sport', width: 250, height: 15, color: '#a0522d', icon: '🧗' },
 
-  // Dekoration
-  { id: 'teppich-gross', name: 'Teppich (groß)', category: 'dekoration', width: 200, height: 300, color: '#d4a574', icon: '🟫' },
-  { id: 'teppich-klein', name: 'Teppich (klein)', category: 'dekoration', width: 120, height: 170, color: '#c89660', icon: '🟫' },
-  { id: 'pflanze-gross', name: 'Pflanze (groß)', category: 'dekoration', width: 50, height: 50, color: '#228b22', icon: '🌿' },
-  { id: 'pflanze-klein', name: 'Pflanze (klein)', category: 'dekoration', width: 30, height: 30, color: '#32cd32', icon: '🪴' },
-  { id: 'stehlampe', name: 'Stehlampe', category: 'dekoration', width: 35, height: 35, color: '#ffd700', icon: '💡' },
+  // ── Verwaltung / Lehrerzimmer ──
+  { id: 'verw-schreibtisch', name: 'Büro-Schreibtisch', category: 'verwaltung', width: 160, height: 80, color: '#b89e78', icon: '🖥️' },
+  { id: 'verw-stuhl', name: 'Bürostuhl', category: 'verwaltung', width: 55, height: 55, color: '#333', icon: '🪑' },
+  { id: 'verw-aktenschrank', name: 'Aktenschrank', category: 'verwaltung', width: 80, height: 45, color: '#8b8068', icon: '🗄️' },
+  { id: 'verw-kopierer', name: 'Kopierer / MFP', category: 'verwaltung', width: 60, height: 65, color: '#555', icon: '🖨️' },
+  { id: 'verw-besprechungstisch', name: 'Besprechungstisch', category: 'verwaltung', width: 200, height: 100, color: '#c8b898', icon: '🪵' },
+  { id: 'verw-postfaecher', name: 'Postfächerschrank', category: 'verwaltung', width: 100, height: 40, color: '#7a8a9a', icon: '📬' },
+  { id: 'verw-kaffeeautomat', name: 'Kaffeemaschine / Automat', category: 'verwaltung', width: 40, height: 45, color: '#4a3a2a', icon: '☕' },
+  { id: 'verw-kuechenzeile', name: 'Küchenzeile (Lehrerz.)', category: 'verwaltung', width: 180, height: 60, color: '#c0c0c0', icon: '🍽️' },
 ];
 
 export function getCatalogByCategory(): Map<FurnitureCategory, FurnitureDefinition[]> {

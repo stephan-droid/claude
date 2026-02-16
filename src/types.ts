@@ -38,14 +38,14 @@ export interface FloorPlan {
 
 /** Möbelkategorie */
 export type FurnitureCategory =
-  | 'sitzmoebel'
-  | 'tische'
-  | 'schraenke'
-  | 'betten'
-  | 'kueche'
-  | 'bad'
-  | 'elektronik'
-  | 'dekoration';
+  | 'allgemein'
+  | 'physik'
+  | 'chemie'
+  | 'kunst'
+  | 'musik'
+  | 'informatik'
+  | 'sport'
+  | 'verwaltung';
 
 /** Definition eines Möbelstücks im Katalog */
 export interface FurnitureDefinition {

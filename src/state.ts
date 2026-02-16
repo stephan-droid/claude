@@ -2,86 +2,129 @@ import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point } from
 
 type Listener = () => void;
 
-/** Beispiel-Grundriss: L-förmige Wohnung */
+/** Beispiel-Grundriss: Schulgebäude (Erdgeschoss-Flügel) */
 function createDefaultFloorPlan(): FloorPlan {
   return {
     id: 'default',
-    name: 'Beispielwohnung',
-    scale: 2, // 2 Pixel pro cm
+    name: 'Schulgebäude – EG Fachräume',
+    scale: 1.5, // 1.5 Pixel pro cm
     rooms: [
-      {
-        id: 'wohnzimmer',
-        name: 'Wohnzimmer',
-        color: '#faf3e8',
-        walls: [
-          { start: { x: 0, y: 0 }, end: { x: 500, y: 0 }, thickness: 20 },
-          { start: { x: 500, y: 0 }, end: { x: 500, y: 400 }, thickness: 20 },
-          { start: { x: 500, y: 400 }, end: { x: 0, y: 400 }, thickness: 20 },
-          { start: { x: 0, y: 400 }, end: { x: 0, y: 0 }, thickness: 20 },
-        ],
-        openings: [
-          { type: 'door', wall: 1, position: 0.5, width: 90 },
-          { type: 'window', wall: 0, position: 0.3, width: 120 },
-          { type: 'window', wall: 0, position: 0.7, width: 120 },
-        ],
-      },
-      {
-        id: 'schlafzimmer',
-        name: 'Schlafzimmer',
-        color: '#e8eef5',
-        walls: [
-          { start: { x: 520, y: 0 }, end: { x: 880, y: 0 }, thickness: 20 },
-          { start: { x: 880, y: 0 }, end: { x: 880, y: 350 }, thickness: 20 },
-          { start: { x: 880, y: 350 }, end: { x: 520, y: 350 }, thickness: 20 },
-          { start: { x: 520, y: 350 }, end: { x: 520, y: 0 }, thickness: 20 },
-        ],
-        openings: [
-          { type: 'door', wall: 3, position: 0.4, width: 80 },
-          { type: 'window', wall: 1, position: 0.5, width: 140 },
-        ],
-      },
-      {
-        id: 'kueche',
-        name: 'Küche',
-        color: '#eef5e8',
-        walls: [
-          { start: { x: 0, y: 420 }, end: { x: 300, y: 420 }, thickness: 20 },
-          { start: { x: 300, y: 420 }, end: { x: 300, y: 620 }, thickness: 20 },
-          { start: { x: 300, y: 620 }, end: { x: 0, y: 620 }, thickness: 20 },
-          { start: { x: 0, y: 620 }, end: { x: 0, y: 420 }, thickness: 20 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.6, width: 80 },
-          { type: 'window', wall: 2, position: 0.5, width: 100 },
-        ],
-      },
-      {
-        id: 'bad',
-        name: 'Bad',
-        color: '#e8f0f5',
-        walls: [
-          { start: { x: 320, y: 420 }, end: { x: 500, y: 420 }, thickness: 20 },
-          { start: { x: 500, y: 420 }, end: { x: 500, y: 620 }, thickness: 20 },
-          { start: { x: 500, y: 620 }, end: { x: 320, y: 620 }, thickness: 20 },
-          { start: { x: 320, y: 620 }, end: { x: 320, y: 420 }, thickness: 20 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.4, width: 70 },
-          { type: 'window', wall: 2, position: 0.5, width: 60 },
-        ],
-      },
+      // ── Flur (durchgehend, mittig) ──
       {
         id: 'flur',
         name: 'Flur',
         color: '#f0ece4',
         walls: [
-          { start: { x: 520, y: 370 }, end: { x: 880, y: 370 }, thickness: 20 },
-          { start: { x: 880, y: 370 }, end: { x: 880, y: 500 }, thickness: 20 },
-          { start: { x: 880, y: 500 }, end: { x: 520, y: 500 }, thickness: 20 },
-          { start: { x: 520, y: 500 }, end: { x: 520, y: 370 }, thickness: 20 },
+          { start: { x: 0, y: 350 }, end: { x: 1400, y: 350 }, thickness: 25 },
+          { start: { x: 1400, y: 350 }, end: { x: 1400, y: 500 }, thickness: 25 },
+          { start: { x: 1400, y: 500 }, end: { x: 0, y: 500 }, thickness: 25 },
+          { start: { x: 0, y: 500 }, end: { x: 0, y: 350 }, thickness: 25 },
         ],
         openings: [
-          { type: 'door', wall: 2, position: 0.8, width: 90 },
+          { type: 'door', wall: 0, position: 0.03, width: 100 },
+          { type: 'door', wall: 2, position: 0.97, width: 100 },
+        ],
+      },
+      // ── Klassenzimmer 1 (oben links) ──
+      {
+        id: 'klasse-1',
+        name: 'Klassenzimmer 1',
+        color: '#faf3e8',
+        walls: [
+          { start: { x: 0, y: 0 }, end: { x: 450, y: 0 }, thickness: 25 },
+          { start: { x: 450, y: 0 }, end: { x: 450, y: 330 }, thickness: 25 },
+          { start: { x: 450, y: 330 }, end: { x: 0, y: 330 }, thickness: 25 },
+          { start: { x: 0, y: 330 }, end: { x: 0, y: 0 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 2, position: 0.85, width: 100 },
+          { type: 'window', wall: 0, position: 0.25, width: 150 },
+          { type: 'window', wall: 0, position: 0.65, width: 150 },
+        ],
+      },
+      // ── Physikraum (oben mitte) ──
+      {
+        id: 'physik',
+        name: 'Physikraum',
+        color: '#e8eef5',
+        walls: [
+          { start: { x: 470, y: 0 }, end: { x: 950, y: 0 }, thickness: 25 },
+          { start: { x: 950, y: 0 }, end: { x: 950, y: 330 }, thickness: 25 },
+          { start: { x: 950, y: 330 }, end: { x: 470, y: 330 }, thickness: 25 },
+          { start: { x: 470, y: 330 }, end: { x: 470, y: 0 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 2, position: 0.12, width: 100 },
+          { type: 'window', wall: 0, position: 0.3, width: 150 },
+          { type: 'window', wall: 0, position: 0.7, width: 150 },
+        ],
+      },
+      // ── Chemieraum (oben rechts) ──
+      {
+        id: 'chemie',
+        name: 'Chemieraum',
+        color: '#eef5e8',
+        walls: [
+          { start: { x: 970, y: 0 }, end: { x: 1400, y: 0 }, thickness: 25 },
+          { start: { x: 1400, y: 0 }, end: { x: 1400, y: 330 }, thickness: 25 },
+          { start: { x: 1400, y: 330 }, end: { x: 970, y: 330 }, thickness: 25 },
+          { start: { x: 970, y: 330 }, end: { x: 970, y: 0 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 2, position: 0.15, width: 100 },
+          { type: 'window', wall: 1, position: 0.3, width: 150 },
+          { type: 'window', wall: 1, position: 0.7, width: 150 },
+        ],
+      },
+      // ── Kunstraum (unten links) ──
+      {
+        id: 'kunst',
+        name: 'Kunstraum',
+        color: '#f5eee8',
+        walls: [
+          { start: { x: 0, y: 520 }, end: { x: 450, y: 520 }, thickness: 25 },
+          { start: { x: 450, y: 520 }, end: { x: 450, y: 850 }, thickness: 25 },
+          { start: { x: 450, y: 850 }, end: { x: 0, y: 850 }, thickness: 25 },
+          { start: { x: 0, y: 850 }, end: { x: 0, y: 520 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 0, position: 0.85, width: 100 },
+          { type: 'window', wall: 2, position: 0.25, width: 150 },
+          { type: 'window', wall: 2, position: 0.65, width: 150 },
+        ],
+      },
+      // ── Musikraum (unten mitte) ──
+      {
+        id: 'musik',
+        name: 'Musikraum',
+        color: '#f0e8f5',
+        walls: [
+          { start: { x: 470, y: 520 }, end: { x: 950, y: 520 }, thickness: 25 },
+          { start: { x: 950, y: 520 }, end: { x: 950, y: 850 }, thickness: 25 },
+          { start: { x: 950, y: 850 }, end: { x: 470, y: 850 }, thickness: 25 },
+          { start: { x: 470, y: 850 }, end: { x: 470, y: 520 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 0, position: 0.12, width: 100 },
+          { type: 'window', wall: 2, position: 0.3, width: 150 },
+          { type: 'window', wall: 2, position: 0.7, width: 150 },
+        ],
+      },
+      // ── Informatikraum (unten rechts) ──
+      {
+        id: 'informatik',
+        name: 'Informatikraum',
+        color: '#e8f0f5',
+        walls: [
+          { start: { x: 970, y: 520 }, end: { x: 1400, y: 520 }, thickness: 25 },
+          { start: { x: 1400, y: 520 }, end: { x: 1400, y: 850 }, thickness: 25 },
+          { start: { x: 1400, y: 850 }, end: { x: 970, y: 850 }, thickness: 25 },
+          { start: { x: 970, y: 850 }, end: { x: 970, y: 520 }, thickness: 25 },
+        ],
+        openings: [
+          { type: 'door', wall: 0, position: 0.15, width: 100 },
+          { type: 'window', wall: 1, position: 0.3, width: 150 },
+          { type: 'window', wall: 1, position: 0.7, width: 150 },
         ],
       },
     ],
