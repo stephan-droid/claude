@@ -14,7 +14,7 @@ export const CATEGORY_LABELS: Record<FurnitureCategory, string> = {
 };
 
 export const FURNITURE_CATALOG: FurnitureDefinition[] = [
-  // ── Allgemein / Klassenzimmer ──
+  // Allgemein / Klassenzimmer
   { id: 'schuelertisch-1', name: 'Schülertisch (Einzel)', category: 'allgemein', width: 70, height: 50, color: '#d2b48c', icon: '📐' },
   { id: 'schuelertisch-2', name: 'Schülertisch (Doppel)', category: 'allgemein', width: 130, height: 50, color: '#c4a882', icon: '📐' },
   { id: 'schuelerstuhl', name: 'Schülerstuhl', category: 'allgemein', width: 42, height: 42, color: '#4a90d9', icon: '🪑' },
@@ -30,7 +30,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'papierkorb', name: 'Papierkorb', category: 'allgemein', width: 30, height: 30, color: '#666', icon: '🗑️' },
   { id: 'overheadprojektor', name: 'Overheadprojektor', category: 'allgemein', width: 40, height: 40, color: '#888', icon: '💡' },
 
-  // ── Physik ──
+  // Physik
   { id: 'physik-demo-tisch', name: 'Demonstrationstisch', category: 'physik', width: 200, height: 80, color: '#4a4a4a', icon: '🔬' },
   { id: 'physik-schuelertisch', name: 'Experimentiertisch', category: 'physik', width: 140, height: 70, color: '#5a5a5a', icon: '⚗️' },
   { id: 'physik-strom', name: 'Stromversorgung (Labortisch)', category: 'physik', width: 60, height: 40, color: '#e8c840', icon: '⚡' },
@@ -41,7 +41,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'physik-oszilloskop', name: 'Oszilloskop-Arbeitsplatz', category: 'physik', width: 60, height: 50, color: '#3a5a3a', icon: '📊' },
   { id: 'physik-verdunkelung', name: 'Verdunkelungsvorhang', category: 'physik', width: 200, height: 5, color: '#222', icon: '🌑' },
 
-  // ── Chemie ──
+  // Chemie
   { id: 'chemie-demo-tisch', name: 'Demo-Tisch mit Abzug', category: 'chemie', width: 200, height: 90, color: '#3a3a3a', icon: '🧪' },
   { id: 'chemie-schuelertisch', name: 'Labortisch (Schüler)', category: 'chemie', width: 140, height: 70, color: '#4a5a4a', icon: '🧫' },
   { id: 'abzug', name: 'Abzugshaube', category: 'chemie', width: 120, height: 80, color: '#c0c0c0', icon: '🌬️' },
@@ -54,7 +54,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'chemie-loescher', name: 'Feuerlöscher', category: 'chemie', width: 20, height: 20, color: '#e03030', icon: '🧯' },
   { id: 'chemie-glasgeraete', name: 'Glasgeräteschrank', category: 'chemie', width: 100, height: 45, color: '#a8b8c8', icon: '🧪' },
 
-  // ── Technik (Werken / Holz / Metall) ──
+  // Technik (Werken / Holz / Metall)
   { id: 'tech-werkbank', name: 'Werkbank (Holz)', category: 'technik', width: 150, height: 70, color: '#a08050', icon: '🪚' },
   { id: 'tech-werkbank-metall', name: 'Werkbank (Metall)', category: 'technik', width: 150, height: 70, color: '#808890', icon: '🔩' },
   { id: 'tech-schraubstock', name: 'Schraubstock', category: 'technik', width: 25, height: 20, color: '#5a5a5a', icon: '🗜️' },
@@ -71,7 +71,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'tech-hocker', name: 'Werkstatthocker', category: 'technik', width: 35, height: 35, color: '#5a5a5a', icon: '🪑' },
   { id: 'tech-maschinentisch', name: 'Maschinentisch', category: 'technik', width: 80, height: 60, color: '#6a7a8a', icon: '🔧' },
 
-  // ── AES (Alltagskultur, Ernährung, Soziales) ──
+  // AES (Alltagskultur, Ernährung, Soziales)
   { id: 'aes-kochzeile', name: 'Kochzeile (4er-Gruppe)', category: 'aes', width: 240, height: 65, color: '#c0c0c0', icon: '🍳' },
   { id: 'aes-herd', name: 'Herd (Ceranfeld)', category: 'aes', width: 60, height: 60, color: '#3a3a3a', icon: '🔥' },
   { id: 'aes-backofen', name: 'Backofen', category: 'aes', width: 60, height: 60, color: '#4a4a4a', icon: '🍞' },
@@ -88,7 +88,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'aes-mikrowelle', name: 'Mikrowelle', category: 'aes', width: 45, height: 35, color: '#555', icon: '📡' },
   { id: 'aes-handtuchhalter', name: 'Handtuchhalter', category: 'aes', width: 60, height: 8, color: '#999', icon: '🧻' },
 
-  // ── Kunst ──
+  // Kunst
   { id: 'kunst-staffelei', name: 'Staffelei', category: 'kunst', width: 60, height: 55, color: '#b8860b', icon: '🎨' },
   { id: 'kunst-arbeitstisch', name: 'Kunst-Arbeitstisch', category: 'kunst', width: 150, height: 80, color: '#c0a070', icon: '🖌️' },
   { id: 'kunst-hocker', name: 'Malhocker', category: 'kunst', width: 35, height: 35, color: '#a0522d', icon: '🪑' },
@@ -100,7 +100,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'kunst-druckpresse', name: 'Druckpresse', category: 'kunst', width: 100, height: 70, color: '#5a5a5a', icon: '🖨️' },
   { id: 'kunst-schneidemaschine', name: 'Schneidemaschine', category: 'kunst', width: 80, height: 50, color: '#707070', icon: '✂️' },
 
-  // ── Musik ──
+  // Musik
   { id: 'musik-klavier', name: 'Klavier / Flügel', category: 'musik', width: 150, height: 160, color: '#1a1a1a', icon: '🎹' },
   { id: 'musik-keyboard', name: 'Keyboard (auf Ständer)', category: 'musik', width: 130, height: 40, color: '#2a2a2a', icon: '🎹' },
   { id: 'musik-stuhl', name: 'Musikstuhl (stapelbar)', category: 'musik', width: 42, height: 42, color: '#333', icon: '🪑' },
@@ -110,7 +110,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'musik-notenschrank', name: 'Notenschrank', category: 'musik', width: 100, height: 45, color: '#7a6a5a', icon: '🎼' },
   { id: 'musik-dirigentenpult', name: 'Dirigentenpult', category: 'musik', width: 50, height: 45, color: '#5a4a3a', icon: '🎶' },
 
-  // ── Informatik ──
+  // Informatik
   { id: 'info-pc-tisch', name: 'PC-Arbeitsplatz', category: 'informatik', width: 120, height: 70, color: '#6a7a8a', icon: '🖥️' },
   { id: 'info-monitor', name: 'Monitor', category: 'informatik', width: 55, height: 10, color: '#2a2a2a', icon: '🖥️' },
   { id: 'info-pc-tower', name: 'PC-Tower (unter Tisch)', category: 'informatik', width: 20, height: 45, color: '#3a3a3a', icon: '💻' },
@@ -120,7 +120,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'info-3d-drucker', name: '3D-Drucker', category: 'informatik', width: 50, height: 50, color: '#4a5a6a', icon: '🖨️' },
   { id: 'info-switch', name: 'Netzwerk-Switch (Wandm.)', category: 'informatik', width: 50, height: 10, color: '#2a4a6a', icon: '🔌' },
 
-  // ── Sport / Turnhalle ──
+  // Sport / Turnhalle
   { id: 'sport-turnmatte', name: 'Turnmatte', category: 'sport', width: 200, height: 125, color: '#2060c0', icon: '🤸' },
   { id: 'sport-weichboden', name: 'Weichbodenmatte', category: 'sport', width: 200, height: 150, color: '#c04040', icon: '🟥' },
   { id: 'sport-kasten', name: 'Sprungkasten', category: 'sport', width: 60, height: 110, color: '#a0522d', icon: '🏋️' },
@@ -132,7 +132,7 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'sport-geraetewagen', name: 'Gerätewagen', category: 'sport', width: 120, height: 60, color: '#666', icon: '🏐' },
   { id: 'sport-sprossenwand', name: 'Sprossenwand', category: 'sport', width: 250, height: 15, color: '#a0522d', icon: '🧗' },
 
-  // ── Verwaltung / Lehrerzimmer ──
+  // Verwaltung / Lehrerzimmer
   { id: 'verw-schreibtisch', name: 'Büro-Schreibtisch', category: 'verwaltung', width: 160, height: 80, color: '#b89e78', icon: '🖥️' },
   { id: 'verw-stuhl', name: 'Bürostuhl', category: 'verwaltung', width: 55, height: 55, color: '#333', icon: '🪑' },
   { id: 'verw-aktenschrank', name: 'Aktenschrank', category: 'verwaltung', width: 80, height: 45, color: '#8b8068', icon: '🗄️' },
