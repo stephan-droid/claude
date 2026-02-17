@@ -1,7 +1,7 @@
 import { store } from './state';
 import { Renderer } from './renderer';
 import { FURNITURE_CATALOG, getCatalogByCategory, CATEGORY_LABELS, getDefinitionById } from './catalog';
-import { FurnitureCategory, FurnitureDefinition, Point } from './types';
+import { FurnitureCategory, FurnitureDefinition, Point, Room, Wall, Opening } from './types';
 import { exportProject, importProject, importFloorPlan, exportAsSVG } from './io';
 import { exportAsPDF } from './pdf';
 
@@ -302,10 +302,275 @@ style.textContent = `
   .catalog::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
   .catalog::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
+  /* ── Grundriss-Editor Modal ── */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    width: 820px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #666;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .modal-close:hover { background: #eee; }
+
+  .modal-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 400px;
+  }
+
+  .room-list {
+    width: 220px;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .room-list-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .room-list-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  .room-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+
+  .room-list-item:hover { background: #f5f5f5; }
+  .room-list-item.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+
+  .room-list-item .room-color-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid #ddd;
+  }
+
+  .room-detail {
+    flex: 1;
+    padding: 16px 20px;
+    overflow-y: auto;
+  }
+
+  .room-detail-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .room-detail h3 {
+    font-size: 14px;
+    margin-bottom: 14px;
+    color: #1a73e8;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="number"],
+  .form-group input[type="color"],
+  .form-group select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+
+  .form-group input[type="color"] {
+    height: 36px;
+    padding: 3px;
+    cursor: pointer;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .form-row .form-group { flex: 1; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 18px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .section-header h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+
+  .btn-sm:hover { background: #f0f0f0; }
+  .btn-sm.primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+  .btn-sm.primary:hover { background: #1557b0; }
+  .btn-sm.danger { color: #d32f2f; border-color: #ffcdd2; }
+  .btn-sm.danger:hover { background: #ffebee; }
+
+  .opening-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #fafafa;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .opening-item select,
+  .opening-item input {
+    padding: 4px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .opening-item select { width: 70px; }
+  .opening-item input { width: 55px; }
+
+  .opening-item .btn-remove {
+    background: none;
+    border: none;
+    color: #d32f2f;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin-left: auto;
+  }
+
+  .opening-item .btn-remove:hover { background: #ffebee; }
+
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+  }
+
+  .floorplan-name-input {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 260px;
+    outline: none;
+  }
+
+  .floorplan-name-input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+
   /* ── Responsive ── */
   @media (max-width: 700px) {
     .sidebar { width: 220px; }
     .properties { width: 180px; }
+    .modal { width: 95vw; }
+    .room-list { width: 160px; }
   }
 `;
 document.head.appendChild(style);
@@ -443,7 +708,8 @@ function renderToolbar() {
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
-      <button id="importFloorPlan" title="Grundriss importieren">📐 Grundriss</button>
+      <button id="editFloorPlan" title="Grundriss bearbeiten (E)">✏️ Grundriss</button>
+      <button id="importFloorPlan" title="Grundriss importieren">📐 Import</button>
       <button id="importProject" title="Projekt laden">📂 Laden</button>
       <button id="exportProject" title="Projekt speichern">💾 Speichern</button>
       <button id="exportSVG" title="Als SVG exportieren">🖼 SVG</button>
@@ -467,6 +733,7 @@ function renderToolbar() {
   toolbarEl.querySelector('#zoomFit')?.addEventListener('click', fitZoom);
   toolbarEl.querySelector('#toggleGrid')?.addEventListener('click', () => store.toggleGrid());
   toolbarEl.querySelector('#toggleSnap')?.addEventListener('click', () => store.toggleSnap());
+  toolbarEl.querySelector('#editFloorPlan')?.addEventListener('click', () => openFloorPlanEditor());
   toolbarEl.querySelector('#importFloorPlan')?.addEventListener('click', () => importFloorPlan());
   toolbarEl.querySelector('#importProject')?.addEventListener('click', () => importProject());
   toolbarEl.querySelector('#exportProject')?.addEventListener('click', () => exportProject());
@@ -532,6 +799,398 @@ function renderStatusbar() {
     <span>Zoom: ${Math.round(state.zoom * 100)}%</span>
     <span>Raster: ${state.snapToGrid ? 'Ein' : 'Aus'} (${state.gridSize}cm)</span>
   `;
+}
+
+// ─── Grundriss-Editor Modal ──────────────────────────────────
+let editorSelectedRoomId: string | null = null;
+
+/** Hilfsfunktion: Bounding-Box eines Raums berechnen (in cm) */
+function getRoomRect(room: Room): { x: number; y: number; w: number; h: number } {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const wall of room.walls) {
+    minX = Math.min(minX, wall.start.x, wall.end.x);
+    minY = Math.min(minY, wall.start.y, wall.end.y);
+    maxX = Math.max(maxX, wall.start.x, wall.end.x);
+    maxY = Math.max(maxY, wall.start.y, wall.end.y);
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+function openFloorPlanEditor() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  function rerender() {
+    overlay.innerHTML = '';
+    overlay.appendChild(buildEditorModal());
+  }
+
+  function buildEditorModal(): HTMLElement {
+    const state = store.getState();
+    const fp = state.floorPlan;
+    const rooms = fp.rooms;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+
+    // ── Header
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    header.innerHTML = `<h2>Grundriss bearbeiten</h2>`;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.textContent = '\u00D7';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    header.appendChild(closeBtn);
+    modal.appendChild(header);
+
+    // ── Body
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+
+    // -- Room list
+    const listPane = document.createElement('div');
+    listPane.className = 'room-list';
+
+    const listHeader = document.createElement('div');
+    listHeader.className = 'room-list-header';
+    listHeader.innerHTML = `<span>R\u00e4ume (${rooms.length})</span>`;
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-sm primary';
+    addBtn.textContent = '+ Neu';
+    addBtn.addEventListener('click', () => {
+      // Neuen Raum unten rechts anf\u00fcgen
+      let maxX = 0, maxY = 0;
+      for (const r of rooms) {
+        const rect = getRoomRect(r);
+        maxX = Math.max(maxX, rect.x + rect.w);
+        maxY = Math.max(maxY, rect.y + rect.h);
+      }
+      const newId = `room-${Date.now()}`;
+      const newRoom: Room = {
+        id: newId,
+        name: 'Neuer Raum',
+        color: '#f5f5f5',
+        walls: [
+          { start: { x: maxX + 50, y: 0 }, end: { x: maxX + 450, y: 0 }, thickness: 25 },
+          { start: { x: maxX + 450, y: 0 }, end: { x: maxX + 450, y: 330 }, thickness: 25 },
+          { start: { x: maxX + 450, y: 330 }, end: { x: maxX + 50, y: 330 }, thickness: 25 },
+          { start: { x: maxX + 50, y: 330 }, end: { x: maxX + 50, y: 0 }, thickness: 25 },
+        ],
+        openings: [],
+      };
+      store.addRoom(newRoom);
+      editorSelectedRoomId = newId;
+      rerender();
+    });
+    listHeader.appendChild(addBtn);
+    listPane.appendChild(listHeader);
+
+    const listItems = document.createElement('div');
+    listItems.className = 'room-list-items';
+    for (const room of rooms) {
+      const item = document.createElement('div');
+      item.className = `room-list-item${room.id === editorSelectedRoomId ? ' active' : ''}`;
+      item.innerHTML = `<div class="room-color-swatch" style="background:${room.color}"></div><span>${room.name}</span>`;
+      item.addEventListener('click', () => {
+        editorSelectedRoomId = room.id;
+        rerender();
+      });
+      listItems.appendChild(item);
+    }
+    listPane.appendChild(listItems);
+    body.appendChild(listPane);
+
+    // -- Detail pane
+    const detail = document.createElement('div');
+    detail.className = 'room-detail';
+
+    const selectedRoom = rooms.find(r => r.id === editorSelectedRoomId);
+    if (!selectedRoom) {
+      detail.innerHTML = '<div class="room-detail-empty">Raum ausw\u00e4hlen oder neuen erstellen</div>';
+    } else {
+      detail.appendChild(buildRoomEditor(selectedRoom, rerender, overlay));
+    }
+
+    body.appendChild(detail);
+    modal.appendChild(body);
+
+    // ── Footer
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'floorplan-name-input';
+    nameInput.type = 'text';
+    nameInput.value = fp.name;
+    nameInput.placeholder = 'Grundriss-Name...';
+    nameInput.addEventListener('change', () => {
+      store.updateFloorPlanName(nameInput.value);
+    });
+
+    const closeFooterBtn = document.createElement('button');
+    closeFooterBtn.className = 'btn-sm primary';
+    closeFooterBtn.textContent = 'Fertig';
+    closeFooterBtn.addEventListener('click', () => overlay.remove());
+
+    footer.appendChild(nameInput);
+    footer.appendChild(closeFooterBtn);
+    modal.appendChild(footer);
+
+    return modal;
+  }
+
+  function buildRoomEditor(room: Room, rerender: () => void, overlay: HTMLElement): HTMLElement {
+    const frag = document.createElement('div');
+    const rect = getRoomRect(room);
+
+    // ── Name & Farbe
+    frag.innerHTML = `<h3>${room.name}</h3>`;
+
+    const nameGroup = document.createElement('div');
+    nameGroup.className = 'form-group';
+    nameGroup.innerHTML = `<label>Raumname</label>`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = room.name;
+    nameInput.addEventListener('change', () => {
+      store.updateRoom(room.id, { name: nameInput.value });
+      rerender();
+    });
+    nameGroup.appendChild(nameInput);
+    frag.appendChild(nameGroup);
+
+    const colorGroup = document.createElement('div');
+    colorGroup.className = 'form-group';
+    colorGroup.innerHTML = `<label>Raumfarbe</label>`;
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = room.color;
+    colorInput.addEventListener('change', () => {
+      store.updateRoom(room.id, { color: colorInput.value });
+      rerender();
+    });
+    colorGroup.appendChild(colorInput);
+    frag.appendChild(colorGroup);
+
+    // ── Position & Gr\u00f6\u00dfe
+    const dimSection = document.createElement('div');
+    dimSection.className = 'section-header';
+    dimSection.innerHTML = `<h4>Position & Gr\u00f6\u00dfe (cm)</h4>`;
+    frag.appendChild(dimSection);
+
+    const row1 = document.createElement('div');
+    row1.className = 'form-row';
+
+    const xGroup = createNumberField('X', rect.x, (v) => {
+      store.updateRoomRect(room.id, v, rect.y, rect.w, rect.h);
+      rerender();
+    });
+    const yGroup = createNumberField('Y', rect.y, (v) => {
+      store.updateRoomRect(room.id, rect.x, v, rect.w, rect.h);
+      rerender();
+    });
+    row1.appendChild(xGroup);
+    row1.appendChild(yGroup);
+    frag.appendChild(row1);
+
+    const row2 = document.createElement('div');
+    row2.className = 'form-row';
+
+    const wGroup = createNumberField('Breite', rect.w, (v) => {
+      if (v < 50) return;
+      store.updateRoomRect(room.id, rect.x, rect.y, v, rect.h);
+      rerender();
+    });
+    const hGroup = createNumberField('Tiefe', rect.h, (v) => {
+      if (v < 50) return;
+      store.updateRoomRect(room.id, rect.x, rect.y, rect.w, v);
+      rerender();
+    });
+    row2.appendChild(wGroup);
+    row2.appendChild(hGroup);
+    frag.appendChild(row2);
+
+    // ── Wandst\u00e4rke
+    const wallSection = document.createElement('div');
+    wallSection.className = 'section-header';
+    wallSection.innerHTML = `<h4>Wandst\u00e4rke</h4>`;
+    frag.appendChild(wallSection);
+
+    const thicknessGroup = createNumberField('Dicke (cm)', room.walls[0]?.thickness ?? 25, (v) => {
+      if (v < 5 || v > 100) return;
+      const newWalls = room.walls.map(w => ({ ...w, thickness: v }));
+      store.updateRoom(room.id, { walls: newWalls });
+      rerender();
+    });
+    frag.appendChild(thicknessGroup);
+
+    // ── \u00d6ffnungen (T\u00fcren & Fenster)
+    const openingSection = document.createElement('div');
+    openingSection.className = 'section-header';
+    openingSection.innerHTML = `<h4>T\u00fcren & Fenster</h4>`;
+    const addOpeningBtn = document.createElement('button');
+    addOpeningBtn.className = 'btn-sm';
+    addOpeningBtn.textContent = '+ Hinzuf\u00fcgen';
+    addOpeningBtn.addEventListener('click', () => {
+      store.addOpening(room.id, { type: 'door', wall: 0, position: 0.5, width: 100 });
+      rerender();
+    });
+    openingSection.appendChild(addOpeningBtn);
+    frag.appendChild(openingSection);
+
+    const wallLabels = room.walls.map((w, i) => {
+      const dx = w.end.x - w.start.x;
+      const dy = w.end.y - w.start.y;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        return dy <= 0 ? `Wand ${i + 1} (oben)` : `Wand ${i + 1} (unten)`;
+      } else {
+        return dx >= 0 ? `Wand ${i + 1} (rechts)` : `Wand ${i + 1} (links)`;
+      }
+    });
+
+    for (let i = 0; i < room.openings.length; i++) {
+      const op = room.openings[i];
+      const item = document.createElement('div');
+      item.className = 'opening-item';
+
+      // Typ
+      const typeSelect = document.createElement('select');
+      typeSelect.innerHTML = `<option value="door"${op.type === 'door' ? ' selected' : ''}>T\u00fcr</option><option value="window"${op.type === 'window' ? ' selected' : ''}>Fenster</option>`;
+      typeSelect.addEventListener('change', () => {
+        const newOpenings = [...room.openings];
+        newOpenings[i] = { ...newOpenings[i], type: typeSelect.value as 'door' | 'window' };
+        store.updateRoom(room.id, { openings: newOpenings });
+        rerender();
+      });
+
+      // Wand
+      const wallSelect = document.createElement('select');
+      wallSelect.style.width = '110px';
+      for (let wi = 0; wi < room.walls.length; wi++) {
+        const opt = document.createElement('option');
+        opt.value = String(wi);
+        opt.textContent = wallLabels[wi];
+        if (wi === op.wall) opt.selected = true;
+        wallSelect.appendChild(opt);
+      }
+      wallSelect.addEventListener('change', () => {
+        const newOpenings = [...room.openings];
+        newOpenings[i] = { ...newOpenings[i], wall: parseInt(wallSelect.value) };
+        store.updateRoom(room.id, { openings: newOpenings });
+        rerender();
+      });
+
+      // Position
+      const posLabel = document.createElement('span');
+      posLabel.textContent = 'Pos:';
+      posLabel.style.fontSize = '11px';
+      posLabel.style.color = '#888';
+      const posInput = document.createElement('input');
+      posInput.type = 'number';
+      posInput.min = '0';
+      posInput.max = '1';
+      posInput.step = '0.05';
+      posInput.value = String(op.position);
+      posInput.addEventListener('change', () => {
+        const val = Math.max(0, Math.min(1, parseFloat(posInput.value) || 0));
+        const newOpenings = [...room.openings];
+        newOpenings[i] = { ...newOpenings[i], position: val };
+        store.updateRoom(room.id, { openings: newOpenings });
+        rerender();
+      });
+
+      // Breite
+      const widthLabel = document.createElement('span');
+      widthLabel.textContent = 'B:';
+      widthLabel.style.fontSize = '11px';
+      widthLabel.style.color = '#888';
+      const widthInput = document.createElement('input');
+      widthInput.type = 'number';
+      widthInput.min = '30';
+      widthInput.step = '10';
+      widthInput.value = String(op.width);
+      widthInput.addEventListener('change', () => {
+        const val = Math.max(30, parseInt(widthInput.value) || 100);
+        const newOpenings = [...room.openings];
+        newOpenings[i] = { ...newOpenings[i], width: val };
+        store.updateRoom(room.id, { openings: newOpenings });
+        rerender();
+      });
+
+      // L\u00f6schen
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove';
+      removeBtn.textContent = '\u2715';
+      removeBtn.addEventListener('click', () => {
+        store.removeOpening(room.id, i);
+        rerender();
+      });
+
+      item.appendChild(typeSelect);
+      item.appendChild(wallSelect);
+      item.appendChild(posLabel);
+      item.appendChild(posInput);
+      item.appendChild(widthLabel);
+      item.appendChild(widthInput);
+      item.appendChild(removeBtn);
+      frag.appendChild(item);
+    }
+
+    if (room.openings.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color:#999;font-size:12px;padding:6px 0;';
+      empty.textContent = 'Keine T\u00fcren oder Fenster. Klicke "+ Hinzuf\u00fcgen".';
+      frag.appendChild(empty);
+    }
+
+    // ── Raum l\u00f6schen
+    const deleteSection = document.createElement('div');
+    deleteSection.style.cssText = 'margin-top:24px;padding-top:12px;border-top:1px solid #eee;';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-sm danger';
+    deleteBtn.textContent = 'Raum l\u00f6schen';
+    deleteBtn.addEventListener('click', () => {
+      if (confirm(`"${room.name}" wirklich l\u00f6schen?`)) {
+        store.removeRoom(room.id);
+        editorSelectedRoomId = null;
+        rerender();
+      }
+    });
+    deleteSection.appendChild(deleteBtn);
+    frag.appendChild(deleteSection);
+
+    return frag;
+  }
+
+  rerender();
+  document.body.appendChild(overlay);
+
+  // Escape schlie\u00dft
+  const escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
+function createNumberField(label: string, value: number, onChange: (v: number) => void): HTMLElement {
+  const group = document.createElement('div');
+  group.className = 'form-group';
+  const lbl = document.createElement('label');
+  lbl.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.value = String(Math.round(value));
+  input.addEventListener('change', () => {
+    const v = parseFloat(input.value);
+    if (!isNaN(v)) onChange(v);
+  });
+  group.appendChild(lbl);
+  group.appendChild(input);
+  return group;
 }
 
 // ─── Canvas Interaktion ─────────────────────────────────────
@@ -717,6 +1376,12 @@ document.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         fitZoom();
+      }
+      break;
+    case 'e':
+    case 'E':
+      if (!e.ctrlKey && !e.metaKey) {
+        openFloorPlanEditor();
       }
       break;
     case 'Escape':

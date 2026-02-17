@@ -1,4 +1,4 @@
-import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point } from './types';
+import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point, Room, Wall, Opening } from './types';
 
 type Listener = () => void;
 
@@ -267,6 +267,71 @@ class Store {
 
   clearFurniture() {
     this.update({ placedFurniture: [], selectedFurnitureId: null });
+  }
+
+  // ── Grundriss-Bearbeitung ──
+
+  updateFloorPlanName(name: string) {
+    this.update({
+      floorPlan: { ...this.state.floorPlan, name },
+    });
+  }
+
+  addRoom(room: Room) {
+    this.update({
+      floorPlan: {
+        ...this.state.floorPlan,
+        rooms: [...this.state.floorPlan.rooms, room],
+      },
+    });
+  }
+
+  updateRoom(roomId: string, changes: Partial<Room>) {
+    this.update({
+      floorPlan: {
+        ...this.state.floorPlan,
+        rooms: this.state.floorPlan.rooms.map(r =>
+          r.id === roomId ? { ...r, ...changes } : r
+        ),
+      },
+    });
+  }
+
+  /** Update room geometry from a simple rectangle (x, y, w, h in cm) */
+  updateRoomRect(roomId: string, x: number, y: number, w: number, h: number) {
+    const room = this.state.floorPlan.rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const thickness = room.walls[0]?.thickness ?? 25;
+    const walls: Wall[] = [
+      { start: { x, y }, end: { x: x + w, y }, thickness },
+      { start: { x: x + w, y }, end: { x: x + w, y: y + h }, thickness },
+      { start: { x: x + w, y: y + h }, end: { x, y: y + h }, thickness },
+      { start: { x, y: y + h }, end: { x, y }, thickness },
+    ];
+    this.updateRoom(roomId, { walls });
+  }
+
+  removeRoom(roomId: string) {
+    this.update({
+      floorPlan: {
+        ...this.state.floorPlan,
+        rooms: this.state.floorPlan.rooms.filter(r => r.id !== roomId),
+      },
+    });
+  }
+
+  addOpening(roomId: string, opening: Opening) {
+    const room = this.state.floorPlan.rooms.find(r => r.id === roomId);
+    if (!room) return;
+    this.updateRoom(roomId, { openings: [...room.openings, opening] });
+  }
+
+  removeOpening(roomId: string, index: number) {
+    const room = this.state.floorPlan.rooms.find(r => r.id === roomId);
+    if (!room) return;
+    this.updateRoom(roomId, {
+      openings: room.openings.filter((_, i) => i !== index),
+    });
   }
 
   private snapValue(v: number): number {
