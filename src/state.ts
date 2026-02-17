@@ -1,4 +1,4 @@
-import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point, Room, Wall, Opening } from './types';
+import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point, Room, Wall, Opening, RoomType, ROOM_TYPE_PRESETS } from './types';
 
 type Listener = () => void;
 
@@ -21,6 +21,7 @@ class Store {
       floorPlan: createDefaultFloorPlan(),
       placedFurniture: [],
       selectedFurnitureId: null,
+      selectedRoomId: null,
       draggedDefinition: null,
       tool: 'select',
       zoom: 1,
@@ -28,6 +29,8 @@ class Store {
       gridVisible: true,
       gridSize: 50,
       snapToGrid: true,
+      showMeasurements: true,
+      showRuler: true,
     };
   }
 
@@ -50,7 +53,31 @@ class Store {
   }
 
   setTool(tool: AppState['tool']) {
-    this.update({ tool, selectedFurnitureId: null });
+    this.update({ tool, selectedFurnitureId: null, selectedRoomId: null });
+  }
+
+  selectRoom(id: string | null) {
+    this.update({ selectedRoomId: id, selectedFurnitureId: null });
+  }
+
+  toggleMeasurements() {
+    this.update({ showMeasurements: !this.state.showMeasurements });
+  }
+
+  toggleRuler() {
+    this.update({ showRuler: !this.state.showRuler });
+  }
+
+  setRoomType(roomId: string, type: RoomType) {
+    const preset = ROOM_TYPE_PRESETS[type];
+    this.update({
+      floorPlan: {
+        ...this.state.floorPlan,
+        rooms: this.state.floorPlan.rooms.map(r =>
+          r.id === roomId ? { ...r, type, color: preset.color } : r
+        ),
+      },
+    });
   }
 
   setZoom(zoom: number) {
@@ -73,7 +100,7 @@ class Store {
     this.update({ draggedDefinition: def });
   }
 
-  placeFurniture(definitionId: string, x: number, y: number): string {
+  placeFurniture(definitionId: string, x: number, y: number, roomId?: string): string {
     const id = `placed-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const item: PlacedFurniture = {
       id,
@@ -83,6 +110,7 @@ class Store {
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
+      roomId,
     };
     this.update({
       placedFurniture: [...this.state.placedFurniture, item],
@@ -135,6 +163,22 @@ class Store {
     this.update({
       placedFurniture: [...this.state.placedFurniture, clone],
       selectedFurnitureId: id,
+    });
+  }
+
+  setFurnitureLabel(id: string, label: string) {
+    this.update({
+      placedFurniture: this.state.placedFurniture.map(f =>
+        f.id === id ? { ...f, label: label || undefined } : f
+      ),
+    });
+  }
+
+  setFurnitureRoom(id: string, roomId: string | undefined) {
+    this.update({
+      placedFurniture: this.state.placedFurniture.map(f =>
+        f.id === id ? { ...f, roomId } : f
+      ),
     });
   }
 

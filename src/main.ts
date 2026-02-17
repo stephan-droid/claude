@@ -1,8 +1,8 @@
 import { store } from './state';
 import { Renderer, DrawingState } from './renderer';
 import { FURNITURE_CATALOG, getCatalogByCategory, CATEGORY_LABELS, getDefinitionById } from './catalog';
-import { FurnitureCategory, FurnitureDefinition, Point, Room, Wall, Opening } from './types';
-import { exportProject, importProject, importFloorPlan, exportAsSVG } from './io';
+import { FurnitureCategory, FurnitureDefinition, Point, Room, Wall, Opening, RoomType, ROOM_TYPE_PRESETS } from './types';
+import { exportProject, importProject, importFloorPlan, exportAsSVG, exportStueckliste } from './io';
 import { exportAsPDF } from './pdf';
 
 // ─── CSS einfügen ───────────────────────────────────────────
@@ -271,6 +271,29 @@ style.textContent = `
   .prop-actions button:hover { background: #f0f0f0; }
   .prop-actions button.danger { color: #d32f2f; border-color: #ffcdd2; }
   .prop-actions button.danger:hover { background: #ffebee; }
+
+  .prop-label-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+
+  .prop-label-row label { color: #666; font-size: 12px; }
+
+  .prop-label-row input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .prop-label-row input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
 
   /* ── Statusleiste ── */
   .statusbar {
@@ -806,17 +829,20 @@ function renderToolbar() {
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
-      <button id="toggleGrid" class="${state.gridVisible ? 'active' : ''}" title="Raster an/aus">▦ Raster</button>
-      <button id="toggleSnap" class="${state.snapToGrid ? 'active' : ''}" title="Am Raster einrasten">⊞ Einrasten</button>
+      <button id="toggleGrid" class="${state.gridVisible ? 'active' : ''}" title="Raster an/aus (G)">▦ Raster</button>
+      <button id="toggleSnap" class="${state.snapToGrid ? 'active' : ''}" title="Am Raster einrasten (S)">⊞ Einrasten</button>
+      <button id="toggleMeasurements" class="${state.showMeasurements ? 'active' : ''}" title="Maße anzeigen">📏 Maße</button>
+      <button id="toggleRuler" class="${state.showRuler ? 'active' : ''}" title="Lineal anzeigen">📐 Lineal</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
       <button id="editFloorPlan" title="Grundriss bearbeiten (E)">✏️ Grundriss</button>
       <button id="importFloorPlan" title="Grundriss importieren">📐 Import</button>
       <button id="importProject" title="Projekt laden">📂 Laden</button>
-      <button id="exportProject" title="Projekt speichern">💾 Speichern</button>
+      <button id="exportProject" title="Projekt speichern (Strg+S)">💾 Speichern</button>
       <button id="exportSVG" title="Als SVG exportieren">🖼 SVG</button>
       <button id="exportPDF" title="Als PDF herunterladen">📄 PDF</button>
+      <button id="exportStueckliste" title="Stückliste als HTML exportieren">📋 Stückliste</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
@@ -844,12 +870,15 @@ function renderToolbar() {
   toolbarEl.querySelector('#zoomFit')?.addEventListener('click', fitZoom);
   toolbarEl.querySelector('#toggleGrid')?.addEventListener('click', () => store.toggleGrid());
   toolbarEl.querySelector('#toggleSnap')?.addEventListener('click', () => store.toggleSnap());
+  toolbarEl.querySelector('#toggleMeasurements')?.addEventListener('click', () => store.toggleMeasurements());
+  toolbarEl.querySelector('#toggleRuler')?.addEventListener('click', () => store.toggleRuler());
   toolbarEl.querySelector('#editFloorPlan')?.addEventListener('click', () => openFloorPlanEditor());
   toolbarEl.querySelector('#importFloorPlan')?.addEventListener('click', () => importFloorPlan());
   toolbarEl.querySelector('#importProject')?.addEventListener('click', () => importProject());
   toolbarEl.querySelector('#exportProject')?.addEventListener('click', () => exportProject());
   toolbarEl.querySelector('#exportSVG')?.addEventListener('click', () => exportAsSVG());
   toolbarEl.querySelector('#exportPDF')?.addEventListener('click', () => exportAsPDF());
+  toolbarEl.querySelector('#exportStueckliste')?.addEventListener('click', () => exportStueckliste());
   toolbarEl.querySelector('#clearAll')?.addEventListener('click', () => {
     if (confirm('Alle platzierten Ausstattung entfernen?')) store.clearFurniture();
   });
@@ -858,44 +887,118 @@ function renderToolbar() {
 // ─── Eigenschaftenpanel ─────────────────────────────────────
 function renderProperties() {
   const state = store.getState();
-  if (!state.selectedFurnitureId) {
-    propertiesEl.innerHTML = '';
+
+  // Möbel ausgewählt
+  if (state.selectedFurnitureId) {
+    const placed = state.placedFurniture.find(f => f.id === state.selectedFurnitureId);
+    if (!placed) { propertiesEl.innerHTML = ''; return; }
+    const def = getDefinitionById(placed.definitionId);
+    if (!def) { propertiesEl.innerHTML = ''; return; }
+
+    const labelVal = placed.label || '';
+
+    propertiesEl.innerHTML = `
+      <div class="properties">
+        <h3>${def.icon} ${def.name}</h3>
+        <div class="prop-row"><label>Position X:</label><span>${Math.round(placed.x)} cm</span></div>
+        <div class="prop-row"><label>Position Y:</label><span>${Math.round(placed.y)} cm</span></div>
+        <div class="prop-row"><label>Breite:</label><span>${Math.round(def.width * placed.scaleX)} cm</span></div>
+        <div class="prop-row"><label>Tiefe:</label><span>${Math.round(def.height * placed.scaleY)} cm</span></div>
+        <div class="prop-row"><label>Rotation:</label><span>${placed.rotation}°</span></div>
+        <div class="prop-label-row">
+          <label>Beschriftung:</label>
+          <input id="furnitureLabelInput" type="text" value="${labelVal}" placeholder="${def.name}" maxlength="30" />
+        </div>
+        <div class="prop-actions">
+          <button id="rotLeft" title="90° links drehen">↺ 90°</button>
+          <button id="rotRight" title="90° rechts drehen">↻ 90°</button>
+          <button id="rot15Left" title="15° links drehen">↺ 15°</button>
+          <button id="rot15Right" title="15° rechts drehen">↻ 15°</button>
+        </div>
+        <div class="prop-actions">
+          <button id="duplicate">⎘ Kopieren</button>
+          <button id="deleteFurn" class="danger">✕ Löschen</button>
+        </div>
+      </div>
+    `;
+
+    const id = placed.id;
+    propertiesEl.querySelector('#rotLeft')?.addEventListener('click', () => store.rotateFurniture(id, -90));
+    propertiesEl.querySelector('#rotRight')?.addEventListener('click', () => store.rotateFurniture(id, 90));
+    propertiesEl.querySelector('#rot15Left')?.addEventListener('click', () => store.rotateFurniture(id, -15));
+    propertiesEl.querySelector('#rot15Right')?.addEventListener('click', () => store.rotateFurniture(id, 15));
+    propertiesEl.querySelector('#duplicate')?.addEventListener('click', () => store.duplicateSelected());
+    propertiesEl.querySelector('#deleteFurn')?.addEventListener('click', () => store.deleteSelected());
+    const labelInput = propertiesEl.querySelector('#furnitureLabelInput') as HTMLInputElement | null;
+    labelInput?.addEventListener('change', () => {
+      store.setFurnitureLabel(id, labelInput.value);
+    });
     return;
   }
 
-  const placed = state.placedFurniture.find(f => f.id === state.selectedFurnitureId);
-  if (!placed) { propertiesEl.innerHTML = ''; return; }
-  const def = getDefinitionById(placed.definitionId);
-  if (!def) { propertiesEl.innerHTML = ''; return; }
+  // Raum ausgewählt
+  if (state.selectedRoomId) {
+    const room = state.floorPlan.rooms.find(r => r.id === state.selectedRoomId);
+    if (!room) { propertiesEl.innerHTML = ''; return; }
 
-  propertiesEl.innerHTML = `
-    <div class="properties">
-      <h3>${def.icon} ${def.name}</h3>
-      <div class="prop-row"><label>Position X:</label><span>${Math.round(placed.x)} cm</span></div>
-      <div class="prop-row"><label>Position Y:</label><span>${Math.round(placed.y)} cm</span></div>
-      <div class="prop-row"><label>Breite:</label><span>${Math.round(def.width * placed.scaleX)} cm</span></div>
-      <div class="prop-row"><label>Tiefe:</label><span>${Math.round(def.height * placed.scaleY)} cm</span></div>
-      <div class="prop-row"><label>Rotation:</label><span>${placed.rotation}°</span></div>
-      <div class="prop-actions">
-        <button id="rotLeft" title="90° links drehen">↺ 90°</button>
-        <button id="rotRight" title="90° rechts drehen">↻ 90°</button>
-        <button id="rot15Left" title="15° links drehen">↺ 15°</button>
-        <button id="rot15Right" title="15° rechts drehen">↻ 15°</button>
-      </div>
-      <div class="prop-actions">
-        <button id="duplicate">⎘ Kopieren</button>
-        <button id="deleteFurn" class="danger">✕ Löschen</button>
-      </div>
-    </div>
-  `;
+    // Fläche berechnen
+    let area = 0;
+    if (room.walls.length >= 3) {
+      for (const wall of room.walls) {
+        area += wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+      }
+      area = Math.abs(area) / 2 / 10000;
+    }
 
-  const id = placed.id;
-  propertiesEl.querySelector('#rotLeft')?.addEventListener('click', () => store.rotateFurniture(id, -90));
-  propertiesEl.querySelector('#rotRight')?.addEventListener('click', () => store.rotateFurniture(id, 90));
-  propertiesEl.querySelector('#rot15Left')?.addEventListener('click', () => store.rotateFurniture(id, -15));
-  propertiesEl.querySelector('#rot15Right')?.addEventListener('click', () => store.rotateFurniture(id, 15));
-  propertiesEl.querySelector('#duplicate')?.addEventListener('click', () => store.duplicateSelected());
-  propertiesEl.querySelector('#deleteFurn')?.addEventListener('click', () => store.deleteSelected());
+    const typeOptions = Object.entries(ROOM_TYPE_PRESETS)
+      .map(([key, preset]) => `<option value="${key}"${room.type === key ? ' selected' : ''}>${preset.label}</option>`)
+      .join('');
+
+    const furnInRoom = state.placedFurniture.filter(f => f.roomId === room.id).length;
+
+    propertiesEl.innerHTML = `
+      <div class="properties">
+        <h3>Raum: ${room.name}</h3>
+        <div class="prop-row"><label>Typ:</label>
+          <select id="roomTypeSelect" style="font-size:11px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;">
+            <option value="">– kein Typ –</option>
+            ${typeOptions}
+          </select>
+        </div>
+        <div class="prop-row"><label>Fläche:</label><span>${area.toFixed(1)} m²</span></div>
+        <div class="prop-row"><label>Möbel:</label><span>${furnInRoom}</span></div>
+        <div class="prop-row"><label>Türen/Fenster:</label><span>${room.openings.length}</span></div>
+        <div class="prop-actions">
+          <button id="editRoom">✏️ Bearbeiten</button>
+          <button id="deleteRoom" class="danger">✕ Löschen</button>
+        </div>
+      </div>
+    `;
+
+    const roomTypeSelect = propertiesEl.querySelector('#roomTypeSelect') as HTMLSelectElement;
+    roomTypeSelect?.addEventListener('change', () => {
+      const val = roomTypeSelect.value as RoomType;
+      if (val) {
+        store.setRoomType(room.id, val);
+      } else {
+        store.updateRoom(room.id, { type: undefined });
+      }
+    });
+
+    propertiesEl.querySelector('#editRoom')?.addEventListener('click', () => {
+      editorSelectedRoomId = room.id;
+      openFloorPlanEditor();
+    });
+    propertiesEl.querySelector('#deleteRoom')?.addEventListener('click', () => {
+      if (confirm(`"${room.name}" wirklich löschen?`)) {
+        store.removeRoom(room.id);
+        store.selectRoom(null);
+      }
+    });
+    return;
+  }
+
+  propertiesEl.innerHTML = '';
 }
 
 // ─── Statusleiste ───────────────────────────────────────────
@@ -903,12 +1006,28 @@ function renderStatusbar() {
   const state = store.getState();
   const roomCount = state.floorPlan.rooms.length;
   const furnCount = state.placedFurniture.length;
+  const selectedRoom = state.selectedRoomId
+    ? state.floorPlan.rooms.find(r => r.id === state.selectedRoomId)
+    : null;
+  const selectedFurn = state.selectedFurnitureId
+    ? state.placedFurniture.find(f => f.id === state.selectedFurnitureId)
+    : null;
+
+  let selInfo = '';
+  if (selectedRoom) selInfo = `· Raum: ${selectedRoom.name}`;
+  else if (selectedFurn) {
+    const def = getDefinitionById(selectedFurn.definitionId);
+    if (def) selInfo = `· Möbel: ${def.name} (${Math.round(selectedFurn.x)}/${Math.round(selectedFurn.y)} cm)`;
+  }
+
   statusbarEl.innerHTML = `
-    <span>Grundriss: ${state.floorPlan.name}</span>
+    <span>${state.floorPlan.name}</span>
     <span>Räume: ${roomCount}</span>
     <span>Ausstattung: ${furnCount}</span>
     <span>Zoom: ${Math.round(state.zoom * 100)}%</span>
-    <span>Raster: ${state.snapToGrid ? 'Ein' : 'Aus'} (${state.gridSize}cm)</span>
+    <span>Raster: ${state.snapToGrid ? 'An' : 'Aus'} (${state.gridSize} cm)</span>
+    ${selInfo ? `<span style="color:#1a73e8">${selInfo}</span>` : ''}
+    <span style="margin-left:auto;color:#bbb">W=Zeichnen · V=Auswahl · H=Verschieben · R=Drehen · Del=Löschen</span>
   `;
 }
 
@@ -1070,6 +1189,27 @@ function openFloorPlanEditor() {
     });
     nameGroup.appendChild(nameInput);
     frag.appendChild(nameGroup);
+
+    // Raumtyp
+    const typeGroup = document.createElement('div');
+    typeGroup.className = 'form-group';
+    typeGroup.innerHTML = `<label>Raumtyp</label>`;
+    const typeSelect = document.createElement('select');
+    typeSelect.innerHTML = `<option value="">– kein Typ –</option>` +
+      Object.entries(ROOM_TYPE_PRESETS)
+        .map(([key, preset]) => `<option value="${key}"${room.type === key ? ' selected' : ''}>${preset.label}</option>`)
+        .join('');
+    typeSelect.addEventListener('change', () => {
+      const val = typeSelect.value as RoomType;
+      if (val) {
+        store.setRoomType(room.id, val);
+      } else {
+        store.updateRoom(room.id, { type: undefined });
+      }
+      rerender();
+    });
+    typeGroup.appendChild(typeSelect);
+    frag.appendChild(typeGroup);
 
     const colorGroup = document.createElement('div');
     colorGroup.className = 'form-group';
@@ -1369,6 +1509,8 @@ function finishDrawing() {
 
   store.addRoom(newRoom);
   cancelDrawing();
+  // Neuen Raum direkt auswählen
+  store.selectRoom(newRoom.id);
 }
 
 function undoLastPoint() {
@@ -1462,16 +1604,19 @@ canvas.addEventListener('mousedown', (e) => {
   }
 
   if (state.tool === 'select') {
-    const hitId = renderer.hitTest(state, pos.x, pos.y);
-    store.selectFurniture(hitId);
-
-    if (hitId) {
+    const hitFurnId = renderer.hitTest(state, pos.x, pos.y);
+    if (hitFurnId) {
+      store.selectFurniture(hitFurnId);
       isDragging = true;
-      dragTarget = hitId;
-      const placed = state.placedFurniture.find(f => f.id === hitId)!;
+      dragTarget = hitFurnId;
+      const placed = state.placedFurniture.find(f => f.id === hitFurnId)!;
       const worldPos = renderer.canvasToWorld(state, pos.x, pos.y);
       dragOffset = { x: placed.x - worldPos.x, y: placed.y - worldPos.y };
       canvas.style.cursor = 'move';
+    } else {
+      // Raum auswählen oder Auswahl aufheben
+      const hitRoomId = renderer.hitTestRoom(state, pos.x, pos.y);
+      store.selectRoom(hitRoomId);
     }
   }
 });
@@ -1585,7 +1730,9 @@ canvas.addEventListener('drop', (e) => {
   const pos = getCanvasPos(e);
   const state = store.getState();
   const worldPos = renderer.canvasToWorld(state, pos.x, pos.y);
-  store.placeFurniture(defId, worldPos.x, worldPos.y);
+  // Automatische Raumzuordnung
+  const roomId = renderer.getRoomAtWorldPoint(state, worldPos.x, worldPos.y) ?? undefined;
+  store.placeFurniture(defId, worldPos.x, worldPos.y, roomId);
   renderer.setGhostPosition(null);
 });
 
@@ -1679,6 +1826,7 @@ document.addEventListener('keydown', (e) => {
         cancelDrawing();
       } else {
         store.selectFurniture(null);
+        store.selectRoom(null);
       }
       break;
   }

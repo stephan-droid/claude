@@ -4,6 +4,7 @@ export const CATEGORY_LABELS: Record<FurnitureCategory, string> = {
   allgemein: 'Allgemein / Klassenzimmer',
   physik: 'Physik',
   chemie: 'Chemie',
+  biologie: 'Biologie',
   technik: 'Technik (Werken / Holz / Metall)',
   aes: 'AES (Ernährung / Textil / Soziales)',
   kunst: 'Kunst',
@@ -53,6 +54,20 @@ export const FURNITURE_CATALOG: FurnitureDefinition[] = [
   { id: 'chemie-augendusche', name: 'Augendusche', category: 'chemie', width: 25, height: 20, color: '#40a040', icon: '👁️' },
   { id: 'chemie-loescher', name: 'Feuerlöscher', category: 'chemie', width: 20, height: 20, color: '#e03030', icon: '🧯' },
   { id: 'chemie-glasgeraete', name: 'Glasgeräteschrank', category: 'chemie', width: 100, height: 45, color: '#a8b8c8', icon: '🧪' },
+
+  // Biologie
+  { id: 'bio-demo-tisch', name: 'Demonstrationstisch (Bio)', category: 'biologie', width: 200, height: 80, color: '#3a5a3a', icon: '🔬' },
+  { id: 'bio-schuelertisch', name: 'Experimentiertisch (Bio)', category: 'biologie', width: 140, height: 70, color: '#4a6a4a', icon: '🧬' },
+  { id: 'bio-mikroskop-tisch', name: 'Mikroskopierplatz', category: 'biologie', width: 80, height: 60, color: '#5a7a5a', icon: '🔬' },
+  { id: 'bio-spuele', name: 'Spüle (Biologie)', category: 'biologie', width: 60, height: 50, color: '#b0c0d0', icon: '🚰' },
+  { id: 'bio-praep-tisch', name: 'Präparationstisch', category: 'biologie', width: 150, height: 70, color: '#5a7a5a', icon: '🩺' },
+  { id: 'bio-schrank', name: 'Biologieschrank', category: 'biologie', width: 100, height: 50, color: '#7a8a7a', icon: '🗄️' },
+  { id: 'bio-sammlungsschrank', name: 'Sammlungsschrank', category: 'biologie', width: 100, height: 50, color: '#6a7a6a', icon: '🗄️' },
+  { id: 'bio-aquarium', name: 'Aquarium / Terrarium', category: 'biologie', width: 80, height: 40, color: '#4080a0', icon: '🐠' },
+  { id: 'bio-kuehlschrank', name: 'Kühlschrank (Proben)', category: 'biologie', width: 60, height: 60, color: '#d0e0d0', icon: '🧊' },
+  { id: 'bio-modell-schrank', name: 'Modellschrank', category: 'biologie', width: 100, height: 50, color: '#8a9a8a', icon: '🦴' },
+  { id: 'bio-gewächshaus-tisch', name: 'Anzuchttisch / Pflanzentisch', category: 'biologie', width: 120, height: 60, color: '#6a9a6a', icon: '🌱' },
+  { id: 'bio-erste-hilfe', name: 'Erste-Hilfe-Kasten', category: 'biologie', width: 30, height: 10, color: '#e03030', icon: '🏥' },
 
   // Technik (Werken / Holz / Metall)
   { id: 'tech-werkbank', name: 'Werkbank (Holz)', category: 'technik', width: 150, height: 70, color: '#a08050', icon: '🪚' },

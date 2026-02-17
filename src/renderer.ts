@@ -1,4 +1,4 @@
-import { AppState, Room, Wall, Opening, PlacedFurniture, Point } from './types';
+import { AppState, Room, Wall, Opening, PlacedFurniture, Point, ROOM_TYPE_PRESETS } from './types';
 import { getDefinitionById } from './catalog';
 
 /** Zeichnungszustand für Raum-Zeichenmodus */
@@ -38,7 +38,7 @@ export class Renderer {
 
     ctx.save();
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#f8f8f8';
+    ctx.fillStyle = '#f0f0f0';
     ctx.fillRect(0, 0, w, h);
 
     // Transformation: Pan + Zoom
@@ -54,7 +54,8 @@ export class Renderer {
 
     // Räume zeichnen
     for (const room of state.floorPlan.rooms) {
-      this.drawRoom(ctx, room, scale);
+      const isSelected = room.id === state.selectedRoomId;
+      this.drawRoom(ctx, room, scale, isSelected, state.showMeasurements, state.placedFurniture);
     }
 
     // Platzierte Möbel zeichnen
@@ -77,10 +78,18 @@ export class Renderer {
       const pw = def.width * scale;
       const ph = def.height * scale;
       ctx.fillRect(pos.x - pw / 2, pos.y - ph / 2, pw, ph);
+      ctx.strokeStyle = '#1a73e8';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(pos.x - pw / 2, pos.y - ph / 2, pw, ph);
       ctx.globalAlpha = 1;
     }
 
     ctx.restore();
+
+    // Lineal (wird außerhalb der Transformation gezeichnet)
+    if (state.showRuler) {
+      this.drawRuler(state, w, h);
+    }
   }
 
   setGhostPosition(pos: Point | null) {
@@ -95,6 +104,7 @@ export class Renderer {
     const maxX = ox + canvasW / state.zoom;
     const maxY = oy + canvasH / state.zoom;
 
+    // Feine Rasterlinie (alle 50cm)
     ctx.strokeStyle = '#e0e0e0';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -111,9 +121,33 @@ export class Renderer {
       ctx.lineTo(maxX, y);
     }
     ctx.stroke();
+
+    // Starke Rasterlinie (alle 1m = 2 Raster)
+    const bigGridPx = gridPx * 2;
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const startXb = Math.floor(ox / bigGridPx) * bigGridPx;
+    const startYb = Math.floor(oy / bigGridPx) * bigGridPx;
+    for (let x = startXb; x <= maxX; x += bigGridPx) {
+      ctx.moveTo(x, oy);
+      ctx.lineTo(x, maxY);
+    }
+    for (let y = startYb; y <= maxY; y += bigGridPx) {
+      ctx.moveTo(ox, y);
+      ctx.lineTo(maxX, y);
+    }
+    ctx.stroke();
   }
 
-  private drawRoom(ctx: CanvasRenderingContext2D, room: Room, scale: number) {
+  private drawRoom(
+    ctx: CanvasRenderingContext2D,
+    room: Room,
+    scale: number,
+    isSelected: boolean,
+    showMeasurements: boolean,
+    placedFurniture: PlacedFurniture[]
+  ) {
     if (room.walls.length === 0) return;
 
     // Raum-Fläche füllen
@@ -135,17 +169,57 @@ export class Renderer {
     for (const opening of room.openings) {
       const wall = room.walls[opening.wall];
       if (wall) {
-        this.drawOpening(ctx, wall, opening, scale);
+        this.drawOpening(ctx, wall, opening, scale, room.color);
       }
     }
 
-    // Raumname in der Mitte
+    // Auswahl-Highlight
+    if (isSelected) {
+      ctx.beginPath();
+      ctx.moveTo(room.walls[0].start.x * scale, room.walls[0].start.y * scale);
+      for (const wall of room.walls) {
+        ctx.lineTo(wall.end.x * scale, wall.end.y * scale);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#1a73e8';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     const center = this.getRoomCenter(room, scale);
-    ctx.fillStyle = '#666';
-    ctx.font = `${12}px system-ui, sans-serif`;
+
+    // Raumname
+    ctx.fillStyle = '#444';
+    ctx.font = `bold ${13}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(room.name, center.x, center.y);
+    ctx.fillText(room.name, center.x, center.y - 8);
+
+    // Raumtyp-Label
+    if (room.type && ROOM_TYPE_PRESETS[room.type]) {
+      ctx.fillStyle = '#888';
+      ctx.font = `${10}px system-ui, sans-serif`;
+      ctx.fillText(ROOM_TYPE_PRESETS[room.type].label, center.x, center.y + 8);
+    }
+
+    // Fläche und Möbelanzahl
+    if (showMeasurements) {
+      const areaCm2 = this.calcRoomAreaCm2(room);
+      const areaM2 = (areaCm2 / 10000).toFixed(1);
+      const furnCount = placedFurniture.filter(f => f.roomId === room.id).length;
+      let info = `${areaM2} m²`;
+      if (furnCount > 0) info += ` · ${furnCount} Möbel`;
+      ctx.fillStyle = '#aaa';
+      ctx.font = `${9}px system-ui, sans-serif`;
+      ctx.fillText(info, center.x, center.y + (room.type ? 22 : 10));
+    }
+
+    // Wandmaße anzeigen
+    if (showMeasurements && isSelected) {
+      this.drawWallMeasurements(ctx, room, scale);
+    }
   }
 
   private drawWall(ctx: CanvasRenderingContext2D, wall: Wall, scale: number) {
@@ -158,7 +232,7 @@ export class Renderer {
     ctx.stroke();
   }
 
-  private drawOpening(ctx: CanvasRenderingContext2D, wall: Wall, opening: Opening, scale: number) {
+  private drawOpening(ctx: CanvasRenderingContext2D, wall: Wall, opening: Opening, scale: number, roomColor: string) {
     const sx = wall.start.x * scale;
     const sy = wall.start.y * scale;
     const ex = wall.end.x * scale;
@@ -176,11 +250,11 @@ export class Renderer {
     const nx = dx / len;
     const ny = dy / len;
 
-    // Öffnung "durchbrechen" (weiß über Wand)
+    // Öffnung "durchbrechen" (Raumfarbe über Wand)
     ctx.beginPath();
     ctx.moveTo(cx - nx * halfW, cy - ny * halfW);
     ctx.lineTo(cx + nx * halfW, cy + ny * halfW);
-    ctx.strokeStyle = opening.type === 'door' ? '#faf3e8' : '#e8f4ff';
+    ctx.strokeStyle = opening.type === 'door' ? roomColor : '#c8e6ff';
     ctx.lineWidth = wall.thickness * scale * 0.35;
     ctx.stroke();
 
@@ -192,8 +266,18 @@ export class Renderer {
       const doorR = halfW;
       const startAngle = Math.atan2(perpY, perpX);
       ctx.arc(cx - nx * halfW, cy - ny * halfW, doorR, startAngle, startAngle + Math.PI / 2, false);
-      ctx.strokeStyle = '#999';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // Türblatt
+      ctx.beginPath();
+      ctx.moveTo(cx - nx * halfW, cy - ny * halfW);
+      ctx.lineTo(
+        cx - nx * halfW + (-ny) * halfW,
+        cy - ny * halfW + (nx) * halfW
+      );
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     } else {
       // Fenster: doppelte Linie
@@ -208,6 +292,49 @@ export class Renderer {
       ctx.strokeStyle = '#4a90d9';
       ctx.lineWidth = 2;
       ctx.stroke();
+    }
+  }
+
+  private drawWallMeasurements(ctx: CanvasRenderingContext2D, room: Room, scale: number) {
+    for (const wall of room.walls) {
+      const sx = wall.start.x * scale;
+      const sy = wall.start.y * scale;
+      const ex = wall.end.x * scale;
+      const ey = wall.end.y * scale;
+      const dx = ex - sx;
+      const dy = ey - sy;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len < 10) continue;
+
+      const midX = (sx + ex) / 2;
+      const midY = (sy + ey) / 2;
+
+      // Senkrecht zur Wand versetzt
+      const nx = -dy / len;
+      const ny = dx / len;
+      const offset = 18;
+
+      const labelX = midX + nx * offset;
+      const labelY = midY + ny * offset;
+
+      // Länge in Metern berechnen
+      const wallLenCm = Math.sqrt(
+        (wall.end.x - wall.start.x) ** 2 + (wall.end.y - wall.start.y) ** 2
+      );
+      const label = wallLenCm >= 100
+        ? `${(wallLenCm / 100).toFixed(2)} m`
+        : `${Math.round(wallLenCm)} cm`;
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      const tw = ctx.measureText(label).width;
+      ctx.fillRect(labelX - tw / 2 - 3, labelY - 8, tw + 6, 14);
+      ctx.fillStyle = '#1a73e8';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, labelX, labelY);
+      ctx.restore();
     }
   }
 
@@ -228,22 +355,43 @@ export class Renderer {
     ctx.fillStyle = def.color;
     ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
 
+    // Dezente innere Kontur
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(-pw / 2 + 2, -ph / 2 + 2, pw - 4, ph - 4);
+
     // Rand
-    ctx.strokeStyle = selected ? '#2196F3' : '#00000030';
-    ctx.lineWidth = selected ? 2.5 : 1;
+    ctx.strokeStyle = selected ? '#1a73e8' : 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = selected ? 2.5 : 1.2;
     ctx.strokeRect(-pw / 2, -ph / 2, pw, ph);
 
-    // Icon
-    ctx.fillStyle = '#fff';
-    ctx.font = `${Math.min(pw, ph) * 0.4}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(def.icon, 0, 0);
+    // Label (benutzerdefiniert oder Standardname)
+    const label = placed.label || def.name;
+    const minDim = Math.min(pw, ph);
 
-    // Name (klein)
+    // Icon
+    const iconSize = Math.min(minDim * 0.38, 22);
+    if (iconSize >= 8) {
+      ctx.font = `${iconSize}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(def.icon, 0, -ph * 0.08);
+    }
+
+    // Name
+    const nameFontSize = Math.max(7, Math.min(minDim * 0.13, 11));
     ctx.fillStyle = '#333';
-    ctx.font = `${Math.max(8, Math.min(pw, ph) * 0.12)}px system-ui, sans-serif`;
-    ctx.fillText(def.name, 0, ph / 2 + 10);
+    ctx.font = `${nameFontSize}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const maxNameWidth = pw - 4;
+    const truncated = this.truncateText(ctx, label, maxNameWidth);
+    if (iconSize >= 8) {
+      ctx.fillText(truncated, 0, ph / 2 - nameFontSize - 2);
+    } else {
+      ctx.textBaseline = 'middle';
+      ctx.fillText(truncated, 0, 0);
+    }
 
     // Selection-Handles
     if (selected) {
@@ -253,9 +401,18 @@ export class Renderer {
     ctx.restore();
   }
 
+  private truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let truncated = text;
+    while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+      truncated = truncated.slice(0, -1);
+    }
+    return truncated + '…';
+  }
+
   private drawSelectionHandles(ctx: CanvasRenderingContext2D, w: number, h: number) {
-    const handleSize = 8;
-    ctx.fillStyle = '#2196F3';
+    const handleSize = 7;
+    ctx.fillStyle = '#1a73e8';
     const corners = [
       [-w / 2, -h / 2],
       [w / 2, -h / 2],
@@ -269,13 +426,13 @@ export class Renderer {
     // Rotation Handle
     ctx.beginPath();
     ctx.moveTo(0, -h / 2);
-    ctx.lineTo(0, -h / 2 - 20);
-    ctx.strokeStyle = '#2196F3';
+    ctx.lineTo(0, -h / 2 - 18);
+    ctx.strokeStyle = '#1a73e8';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(0, -h / 2 - 24, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#2196F3';
+    ctx.arc(0, -h / 2 - 22, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a73e8';
     ctx.fill();
   }
 
@@ -287,6 +444,16 @@ export class Renderer {
     }
     const n = room.walls.length;
     return { x: (cx / n) * scale, y: (cy / n) * scale };
+  }
+
+  /** Fläche des Raums in cm² (Shoelace-Formel) */
+  private calcRoomAreaCm2(room: Room): number {
+    if (room.walls.length < 3) return 0;
+    let area = 0;
+    for (const wall of room.walls) {
+      area += wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+    }
+    return Math.abs(area) / 2;
   }
 
   private drawDrawingPreview(ctx: CanvasRenderingContext2D, scale: number) {
@@ -381,21 +548,141 @@ export class Renderer {
       if (len > 20) {
         const midX = ((last.x + ds.cursorPos.x) / 2) * scale;
         const midY = ((last.y + ds.cursorPos.y) / 2) * scale;
-        const label = `${Math.round(len)} cm`;
+        const label = len >= 100
+          ? `${(len / 100).toFixed(2)} m`
+          : `${Math.round(len)} cm`;
         ctx.save();
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.fillRect(midX - tw / 2 - 5, midY - 10, tw + 10, 18);
+        ctx.strokeStyle = '#1a73e8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(midX - tw / 2 - 5, midY - 10, tw + 10, 18);
         ctx.fillStyle = '#1a73e8';
         ctx.font = 'bold 11px system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        // Hintergrund
-        const tw = ctx.measureText(label).width;
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillRect(midX - tw / 2 - 4, midY - 16, tw + 8, 16);
-        ctx.fillStyle = '#1a73e8';
-        ctx.fillText(label, midX, midY - 2);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, midX, midY - 1);
         ctx.restore();
       }
     }
+  }
+
+  /** Lineal am oberen und linken Rand */
+  private drawRuler(state: AppState, canvasW: number, canvasH: number) {
+    const ctx = this.ctx;
+    const scale = state.floorPlan.scale;
+    const rulerSize = 22;
+    const cmPerMeter = 100;
+
+    // Wie viele cm entsprechen 1 Pixel auf dem Canvas?
+    // (panOffset.x + worldX * scale * zoom) = canvasX
+    // => worldX (cm) = (canvasX - panOffset.x) / (scale * zoom)
+    const pixPerCm = scale * state.zoom;
+
+    ctx.save();
+
+    // Hintergrund Lineal
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(rulerSize, 0, canvasW - rulerSize, rulerSize);
+    ctx.fillRect(0, rulerSize, rulerSize, canvasH - rulerSize);
+
+    // Ecke
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillRect(0, 0, rulerSize, rulerSize);
+
+    // Trennlinien
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(rulerSize, rulerSize);
+    ctx.lineTo(canvasW, rulerSize);
+    ctx.moveTo(rulerSize, rulerSize);
+    ctx.lineTo(rulerSize, canvasH);
+    ctx.stroke();
+
+    // Bestimme Schrittweite in cm (so dass Ticks sinnvoll verteilt sind)
+    const targetTickPx = 60;
+    let stepCm = 10; // start at 10cm
+    const steps = [10, 25, 50, 100, 200, 500, 1000];
+    for (const s of steps) {
+      if (s * pixPerCm >= targetTickPx) { stepCm = s; break; }
+    }
+
+    ctx.fillStyle = '#666';
+    ctx.font = '9px system-ui, monospace';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+
+    // Horizontales Lineal (X-Achse)
+    const startCmX = Math.floor((-state.panOffset.x) / pixPerCm / stepCm) * stepCm;
+    const endCmX = Math.ceil((canvasW - state.panOffset.x) / pixPerCm / stepCm) * stepCm;
+
+    ctx.beginPath();
+    for (let cm = startCmX; cm <= endCmX; cm += stepCm) {
+      const px = state.panOffset.x + cm * pixPerCm;
+      if (px < rulerSize || px > canvasW) continue;
+      const isMeter = cm % cmPerMeter === 0;
+      const tickH = isMeter ? 12 : 6;
+      ctx.moveTo(px, rulerSize - tickH);
+      ctx.lineTo(px, rulerSize);
+    }
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    for (let cm = startCmX; cm <= endCmX; cm += stepCm) {
+      const px = state.panOffset.x + cm * pixPerCm;
+      if (px < rulerSize + 2 || px > canvasW - 2) continue;
+      const isMeter = cm % cmPerMeter === 0;
+      if (isMeter) {
+        ctx.fillStyle = '#555';
+        ctx.font = 'bold 9px system-ui, monospace';
+        ctx.fillText(`${cm / 100}m`, px, 2);
+      } else if (stepCm <= 50) {
+        ctx.fillStyle = '#999';
+        ctx.font = '8px system-ui, monospace';
+        ctx.fillText(`${cm}`, px, 5);
+      }
+    }
+
+    // Vertikales Lineal (Y-Achse)
+    const startCmY = Math.floor((-state.panOffset.y) / pixPerCm / stepCm) * stepCm;
+    const endCmY = Math.ceil((canvasH - state.panOffset.y) / pixPerCm / stepCm) * stepCm;
+
+    ctx.beginPath();
+    for (let cm = startCmY; cm <= endCmY; cm += stepCm) {
+      const py = state.panOffset.y + cm * pixPerCm;
+      if (py < rulerSize || py > canvasH) continue;
+      const isMeter = cm % cmPerMeter === 0;
+      const tickW = isMeter ? 12 : 6;
+      ctx.moveTo(rulerSize - tickW, py);
+      ctx.lineTo(rulerSize, py);
+    }
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(rulerSize / 2, rulerSize);
+    ctx.rotate(-Math.PI / 2);
+    for (let cm = startCmY; cm <= endCmY; cm += stepCm) {
+      const py = state.panOffset.y + cm * pixPerCm;
+      if (py < rulerSize + 2 || py > canvasH - 2) continue;
+      const isMeter = cm % cmPerMeter === 0;
+      if (isMeter) {
+        ctx.fillStyle = '#555';
+        ctx.font = 'bold 9px system-ui, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${cm / 100}m`, -(py - rulerSize), -2);
+      } else if (stepCm <= 50) {
+        ctx.fillStyle = '#999';
+        ctx.font = '8px system-ui, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${cm}`, -(py - rulerSize), -4);
+      }
+    }
+    ctx.restore();
+
+    ctx.restore();
   }
 
   /** Ermittelt, welches Möbelstück an der Canvasposition liegt */
@@ -427,6 +714,51 @@ export class Renderer {
 
       if (rx >= -hw && rx <= hw && ry >= -hh && ry <= hh) {
         return placed.id;
+      }
+    }
+    return null;
+  }
+
+  /** Ermittelt, welcher Raum an der Canvasposition liegt */
+  hitTestRoom(state: AppState, canvasX: number, canvasY: number): string | null {
+    const scale = state.floorPlan.scale;
+    const wx = (canvasX - state.panOffset.x) / state.zoom;
+    const wy = (canvasY - state.panOffset.y) / state.zoom;
+
+    // Rückwärts iterieren (zuletzt gezeichneter Raum oben)
+    for (let i = state.floorPlan.rooms.length - 1; i >= 0; i--) {
+      const room = state.floorPlan.rooms[i];
+      if (room.walls.length < 3) continue;
+
+      const pts = room.walls.map(w => ({ x: w.start.x * scale, y: w.start.y * scale }));
+      if (this.pointInPolygon(wx, wy, pts)) {
+        return room.id;
+      }
+    }
+    return null;
+  }
+
+  /** Ray-Casting Algorithmus: Punkt in Polygon */
+  private pointInPolygon(x: number, y: number, poly: Point[]): boolean {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i].x, yi = poly[i].y;
+      const xj = poly[j].x, yj = poly[j].y;
+      const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  /** Ermittelt, in welchem Raum ein Weltpunkt liegt */
+  getRoomAtWorldPoint(state: AppState, wx: number, wy: number): string | null {
+    const scale = state.floorPlan.scale;
+    for (let i = state.floorPlan.rooms.length - 1; i >= 0; i--) {
+      const room = state.floorPlan.rooms[i];
+      if (room.walls.length < 3) continue;
+      const pts = room.walls.map(w => ({ x: w.start.x * scale, y: w.start.y * scale }));
+      if (this.pointInPolygon(wx * scale, wy * scale, pts)) {
+        return room.id;
       }
     }
     return null;
