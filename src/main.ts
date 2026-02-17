@@ -1,5 +1,5 @@
 import { store } from './state';
-import { Renderer } from './renderer';
+import { Renderer, DrawingState } from './renderer';
 import { FURNITURE_CATALOG, getCatalogByCategory, CATEGORY_LABELS, getDefinitionById } from './catalog';
 import { FurnitureCategory, FurnitureDefinition, Point, Room, Wall, Opening } from './types';
 import { exportProject, importProject, importFloorPlan, exportAsSVG } from './io';
@@ -301,6 +301,44 @@ style.textContent = `
   .catalog::-webkit-scrollbar { width: 6px; }
   .catalog::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
   .catalog::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+  /* ── Zeichenmodus-Banner ── */
+  .drawing-banner {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a73e8;
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+  }
+
+  .drawing-banner .hint {
+    opacity: 0.9;
+    font-size: 12px;
+  }
+
+  .drawing-banner button {
+    padding: 4px 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .drawing-banner button:hover {
+    background: rgba(255,255,255,0.25);
+  }
 
   /* ── Grundriss-Editor Modal ── */
   .modal-overlay {
@@ -693,6 +731,7 @@ function renderToolbar() {
     <div class="toolbar-group">
       <button data-tool="select" class="${state.tool === 'select' ? 'active' : ''}" title="Auswählen (V)">↖ Auswahl</button>
       <button data-tool="pan" class="${state.tool === 'pan' ? 'active' : ''}" title="Verschieben (H)">✋ Hand</button>
+      <button data-tool="draw-wall" class="${state.tool === 'draw-wall' ? 'active' : ''}" title="Raum zeichnen (W)">✏ Zeichnen</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
@@ -724,7 +763,15 @@ function renderToolbar() {
   // Eventhandler
   toolbarEl.querySelectorAll('[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
-      store.setTool((btn as HTMLElement).dataset.tool as any);
+      const newTool = (btn as HTMLElement).dataset.tool as any;
+      if (newTool === 'draw-wall') {
+        if (!isDrawing) {
+          store.setTool('draw-wall');
+        }
+      } else {
+        if (isDrawing) cancelDrawing();
+        store.setTool(newTool);
+      }
     });
   });
 
@@ -1193,6 +1240,114 @@ function createNumberField(label: string, value: number, onChange: (v: number) =
   return group;
 }
 
+// ─── Raum-Zeichenmodus ──────────────────────────────────────
+const drawingState: DrawingState = { points: [], cursorPos: null };
+let isDrawing = false;
+let drawingBannerEl: HTMLElement | null = null;
+
+function startDrawing() {
+  isDrawing = true;
+  drawingState.points = [];
+  drawingState.cursorPos = null;
+  renderer.setDrawingState(drawingState);
+  store.setTool('draw-wall');
+  canvas.style.cursor = 'crosshair';
+  showDrawingBanner();
+}
+
+function cancelDrawing() {
+  isDrawing = false;
+  drawingState.points = [];
+  drawingState.cursorPos = null;
+  renderer.setDrawingState(null);
+  store.setTool('select');
+  canvas.style.cursor = 'default';
+  hideDrawingBanner();
+}
+
+function finishDrawing() {
+  if (drawingState.points.length < 3) {
+    cancelDrawing();
+    return;
+  }
+
+  const pts = drawingState.points;
+  // Raum-Name abfragen
+  const name = prompt('Raumname:', 'Neuer Raum');
+  if (!name) {
+    cancelDrawing();
+    return;
+  }
+
+  // Wände aus Punkten erstellen
+  const walls: Wall[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    walls.push({
+      start: { x: pts[i].x, y: pts[i].y },
+      end: { x: pts[(i + 1) % pts.length].x, y: pts[(i + 1) % pts.length].y },
+      thickness: 25,
+    });
+  }
+
+  // Zufällige Pastellfarbe
+  const colors = ['#faf3e8', '#e8eef5', '#eef5e8', '#f5eee8', '#f0e8f5', '#e8f0f5', '#f5f0e8', '#e8f5f0'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
+  const newRoom: Room = {
+    id: `room-${Date.now()}`,
+    name,
+    color,
+    walls,
+    openings: [],
+  };
+
+  store.addRoom(newRoom);
+  cancelDrawing();
+}
+
+function undoLastPoint() {
+  if (drawingState.points.length > 0) {
+    drawingState.points.pop();
+    renderer.setDrawingState(drawingState);
+    if (drawingState.points.length === 0) {
+      cancelDrawing();
+    }
+  }
+}
+
+function showDrawingBanner() {
+  hideDrawingBanner();
+  drawingBannerEl = document.createElement('div');
+  drawingBannerEl.className = 'drawing-banner';
+  drawingBannerEl.innerHTML = `
+    <span>Raum zeichnen</span>
+    <span class="hint">Klicke, um Eckpunkte zu setzen. Klicke auf den Startpunkt (rot), um den Raum zu schlie\u00dfen.</span>
+  `;
+  const undoBtn = document.createElement('button');
+  undoBtn.textContent = 'R\u00fcckg\u00e4ngig';
+  undoBtn.addEventListener('click', undoLastPoint);
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Abbrechen';
+  cancelBtn.addEventListener('click', cancelDrawing);
+  drawingBannerEl.appendChild(undoBtn);
+  drawingBannerEl.appendChild(cancelBtn);
+  canvasContainer.appendChild(drawingBannerEl);
+}
+
+function hideDrawingBanner() {
+  if (drawingBannerEl) {
+    drawingBannerEl.remove();
+    drawingBannerEl = null;
+  }
+}
+
+function snapToGridValue(v: number): number {
+  const state = store.getState();
+  if (!state.snapToGrid) return v;
+  const g = state.gridSize;
+  return Math.round(v / g) * g;
+}
+
 // ─── Canvas Interaktion ─────────────────────────────────────
 let isDragging = false;
 let isPanning = false;
@@ -1213,6 +1368,30 @@ canvas.addEventListener('mousedown', (e) => {
     isPanning = true;
     lastPanPos = { x: e.clientX, y: e.clientY };
     canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  if (state.tool === 'draw-wall' && e.button === 0) {
+    const worldPos = renderer.canvasToWorld(state, pos.x, pos.y);
+    const sx = snapToGridValue(worldPos.x);
+    const sy = snapToGridValue(worldPos.y);
+
+    if (!isDrawing) {
+      startDrawing();
+    }
+
+    // Prüfen ob wir den Startpunkt treffen (Raum schließen)
+    if (drawingState.points.length >= 3) {
+      const first = drawingState.points[0];
+      const dist = Math.sqrt((sx - first.x) ** 2 + (sy - first.y) ** 2);
+      if (dist < 30) {
+        finishDrawing();
+        return;
+      }
+    }
+
+    drawingState.points.push({ x: sx, y: sy });
+    renderer.setDrawingState(drawingState);
     return;
   }
 
@@ -1249,6 +1428,19 @@ canvas.addEventListener('mousemove', (e) => {
     return;
   }
 
+  // Zeichenmodus: Cursor-Position aktualisieren
+  if (state.tool === 'draw-wall' && isDrawing) {
+    const pos = getCanvasPos(e);
+    const worldPos = renderer.canvasToWorld(state, pos.x, pos.y);
+    drawingState.cursorPos = {
+      x: snapToGridValue(worldPos.x),
+      y: snapToGridValue(worldPos.y),
+    };
+    renderer.setDrawingState(drawingState);
+    canvas.style.cursor = 'crosshair';
+    return;
+  }
+
   // Cursor-Feedback
   if (state.tool === 'select') {
     const pos = getCanvasPos(e);
@@ -1256,6 +1448,8 @@ canvas.addEventListener('mousemove', (e) => {
     canvas.style.cursor = hitId ? 'move' : 'default';
   } else if (state.tool === 'pan') {
     canvas.style.cursor = 'grab';
+  } else if (state.tool === 'draw-wall') {
+    canvas.style.cursor = 'crosshair';
   }
 });
 
@@ -1264,7 +1458,20 @@ canvas.addEventListener('mouseup', () => {
   isPanning = false;
   dragTarget = null;
   const state = store.getState();
-  canvas.style.cursor = state.tool === 'pan' ? 'grab' : 'default';
+  if (state.tool === 'draw-wall') {
+    canvas.style.cursor = 'crosshair';
+  } else {
+    canvas.style.cursor = state.tool === 'pan' ? 'grab' : 'default';
+  }
+});
+
+canvas.addEventListener('dblclick', () => {
+  const state = store.getState();
+  if (state.tool === 'draw-wall' && isDrawing && drawingState.points.length >= 3) {
+    // Letzten doppelklick-Punkt entfernen (wurde durch mousedown hinzugefügt)
+    drawingState.points.pop();
+    finishDrawing();
+  }
 });
 
 canvas.addEventListener('mouseleave', () => {
@@ -1378,14 +1585,35 @@ document.addEventListener('keydown', (e) => {
         fitZoom();
       }
       break;
+    case 'w':
+    case 'W':
+      if (!e.ctrlKey && !e.metaKey) {
+        if (isDrawing) {
+          cancelDrawing();
+        } else {
+          store.setTool('draw-wall');
+        }
+      }
+      break;
     case 'e':
     case 'E':
-      if (!e.ctrlKey && !e.metaKey) {
+      if (!e.ctrlKey && !e.metaKey && !isDrawing) {
         openFloorPlanEditor();
       }
       break;
+    case 'z':
+    case 'Z':
+      if ((e.ctrlKey || e.metaKey) && isDrawing) {
+        e.preventDefault();
+        undoLastPoint();
+      }
+      break;
     case 'Escape':
-      store.selectFurniture(null);
+      if (isDrawing) {
+        cancelDrawing();
+      } else {
+        store.selectFurniture(null);
+      }
       break;
   }
 });

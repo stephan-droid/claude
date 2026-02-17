@@ -1,13 +1,24 @@
 import { AppState, Room, Wall, Opening, PlacedFurniture, Point } from './types';
 import { getDefinitionById } from './catalog';
 
+/** Zeichnungszustand für Raum-Zeichenmodus */
+export interface DrawingState {
+  points: Point[];
+  cursorPos: Point | null; // aktuelle Mausposition in Welt-cm
+}
+
 export class Renderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private drawingState: DrawingState | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
+  }
+
+  setDrawingState(state: DrawingState | null) {
+    this.drawingState = state;
   }
 
   resize() {
@@ -50,6 +61,11 @@ export class Renderer {
     for (const furniture of state.placedFurniture) {
       const isSelected = furniture.id === state.selectedFurnitureId;
       this.drawFurniture(ctx, furniture, scale, isSelected);
+    }
+
+    // Zeichenvorschau
+    if (this.drawingState && this.drawingState.points.length > 0) {
+      this.drawDrawingPreview(ctx, scale);
     }
 
     // Geistervorschau beim Draggen
@@ -271,6 +287,115 @@ export class Renderer {
     }
     const n = room.walls.length;
     return { x: (cx / n) * scale, y: (cy / n) * scale };
+  }
+
+  private drawDrawingPreview(ctx: CanvasRenderingContext2D, scale: number) {
+    const ds = this.drawingState!;
+    const pts = ds.points;
+
+    // Geschlossene Fläche als Vorschau
+    if (pts.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x * scale, pts[0].y * scale);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x * scale, pts[i].y * scale);
+      }
+      if (ds.cursorPos) {
+        ctx.lineTo(ds.cursorPos.x * scale, ds.cursorPos.y * scale);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(26, 115, 232, 0.08)';
+      ctx.fill();
+    }
+
+    // Gesetzte Wände zeichnen
+    ctx.strokeStyle = '#1a73e8';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([]);
+    for (let i = 0; i < pts.length - 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(pts[i].x * scale, pts[i].y * scale);
+      ctx.lineTo(pts[i + 1].x * scale, pts[i + 1].y * scale);
+      ctx.stroke();
+    }
+
+    // Vorschau-Linie vom letzten Punkt zum Cursor
+    if (ds.cursorPos && pts.length > 0) {
+      const last = pts[pts.length - 1];
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#1a73e8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(last.x * scale, last.y * scale);
+      ctx.lineTo(ds.cursorPos.x * scale, ds.cursorPos.y * scale);
+      ctx.stroke();
+
+      // Schließ-Vorschau: gestrichelt zum ersten Punkt
+      if (pts.length >= 2) {
+        ctx.strokeStyle = 'rgba(26, 115, 232, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(ds.cursorPos.x * scale, ds.cursorPos.y * scale);
+        ctx.lineTo(pts[0].x * scale, pts[0].y * scale);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+    }
+
+    // Punkte als Kreise
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      ctx.beginPath();
+      ctx.arc(p.x * scale, p.y * scale, i === 0 ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#ff5722' : '#1a73e8';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Snap-Indikator am ersten Punkt
+    if (pts.length >= 3 && ds.cursorPos) {
+      const first = pts[0];
+      const dist = Math.sqrt(
+        (ds.cursorPos.x - first.x) ** 2 + (ds.cursorPos.y - first.y) ** 2
+      );
+      if (dist < 30) {
+        ctx.beginPath();
+        ctx.arc(first.x * scale, first.y * scale, 12, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ff5722';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Maßanzeige für aktuelle Linie
+    if (ds.cursorPos && pts.length > 0) {
+      const last = pts[pts.length - 1];
+      const dx = ds.cursorPos.x - last.x;
+      const dy = ds.cursorPos.y - last.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 20) {
+        const midX = ((last.x + ds.cursorPos.x) / 2) * scale;
+        const midY = ((last.y + ds.cursorPos.y) / 2) * scale;
+        const label = `${Math.round(len)} cm`;
+        ctx.save();
+        ctx.fillStyle = '#1a73e8';
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        // Hintergrund
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(midX - tw / 2 - 4, midY - 16, tw + 8, 16);
+        ctx.fillStyle = '#1a73e8';
+        ctx.fillText(label, midX, midY - 2);
+        ctx.restore();
+      }
+    }
   }
 
   /** Ermittelt, welches Möbelstück an der Canvasposition liegt */
