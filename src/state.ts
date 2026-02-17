@@ -2,132 +2,13 @@ import { AppState, FloorPlan, PlacedFurniture, FurnitureDefinition, Point, Room,
 
 type Listener = () => void;
 
-/** Beispiel-Grundriss: Schulgebäude (Erdgeschoss-Flügel) */
+/** Leerer Grundriss – der Benutzer zeichnet selbst */
 function createDefaultFloorPlan(): FloorPlan {
   return {
     id: 'default',
-    name: 'Schulgebäude – EG Fachräume',
-    scale: 1.5, // 1.5 Pixel pro cm
-    rooms: [
-      // ── Flur (durchgehend, mittig) ──
-      {
-        id: 'flur',
-        name: 'Flur',
-        color: '#f0ece4',
-        walls: [
-          { start: { x: 0, y: 350 }, end: { x: 1400, y: 350 }, thickness: 25 },
-          { start: { x: 1400, y: 350 }, end: { x: 1400, y: 500 }, thickness: 25 },
-          { start: { x: 1400, y: 500 }, end: { x: 0, y: 500 }, thickness: 25 },
-          { start: { x: 0, y: 500 }, end: { x: 0, y: 350 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.03, width: 100 },
-          { type: 'door', wall: 2, position: 0.97, width: 100 },
-        ],
-      },
-      // ── Klassenzimmer 1 (oben links) ──
-      {
-        id: 'klasse-1',
-        name: 'Klassenzimmer 1',
-        color: '#faf3e8',
-        walls: [
-          { start: { x: 0, y: 0 }, end: { x: 450, y: 0 }, thickness: 25 },
-          { start: { x: 450, y: 0 }, end: { x: 450, y: 330 }, thickness: 25 },
-          { start: { x: 450, y: 330 }, end: { x: 0, y: 330 }, thickness: 25 },
-          { start: { x: 0, y: 330 }, end: { x: 0, y: 0 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 2, position: 0.85, width: 100 },
-          { type: 'window', wall: 0, position: 0.25, width: 150 },
-          { type: 'window', wall: 0, position: 0.65, width: 150 },
-        ],
-      },
-      // ── Physikraum (oben mitte) ──
-      {
-        id: 'physik',
-        name: 'Physikraum',
-        color: '#e8eef5',
-        walls: [
-          { start: { x: 470, y: 0 }, end: { x: 950, y: 0 }, thickness: 25 },
-          { start: { x: 950, y: 0 }, end: { x: 950, y: 330 }, thickness: 25 },
-          { start: { x: 950, y: 330 }, end: { x: 470, y: 330 }, thickness: 25 },
-          { start: { x: 470, y: 330 }, end: { x: 470, y: 0 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 2, position: 0.12, width: 100 },
-          { type: 'window', wall: 0, position: 0.3, width: 150 },
-          { type: 'window', wall: 0, position: 0.7, width: 150 },
-        ],
-      },
-      // ── Chemieraum (oben rechts) ──
-      {
-        id: 'chemie',
-        name: 'Chemieraum',
-        color: '#eef5e8',
-        walls: [
-          { start: { x: 970, y: 0 }, end: { x: 1400, y: 0 }, thickness: 25 },
-          { start: { x: 1400, y: 0 }, end: { x: 1400, y: 330 }, thickness: 25 },
-          { start: { x: 1400, y: 330 }, end: { x: 970, y: 330 }, thickness: 25 },
-          { start: { x: 970, y: 330 }, end: { x: 970, y: 0 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 2, position: 0.15, width: 100 },
-          { type: 'window', wall: 1, position: 0.3, width: 150 },
-          { type: 'window', wall: 1, position: 0.7, width: 150 },
-        ],
-      },
-      // ── Kunstraum (unten links) ──
-      {
-        id: 'kunst',
-        name: 'Kunstraum',
-        color: '#f5eee8',
-        walls: [
-          { start: { x: 0, y: 520 }, end: { x: 450, y: 520 }, thickness: 25 },
-          { start: { x: 450, y: 520 }, end: { x: 450, y: 850 }, thickness: 25 },
-          { start: { x: 450, y: 850 }, end: { x: 0, y: 850 }, thickness: 25 },
-          { start: { x: 0, y: 850 }, end: { x: 0, y: 520 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.85, width: 100 },
-          { type: 'window', wall: 2, position: 0.25, width: 150 },
-          { type: 'window', wall: 2, position: 0.65, width: 150 },
-        ],
-      },
-      // ── Musikraum (unten mitte) ──
-      {
-        id: 'musik',
-        name: 'Musikraum',
-        color: '#f0e8f5',
-        walls: [
-          { start: { x: 470, y: 520 }, end: { x: 950, y: 520 }, thickness: 25 },
-          { start: { x: 950, y: 520 }, end: { x: 950, y: 850 }, thickness: 25 },
-          { start: { x: 950, y: 850 }, end: { x: 470, y: 850 }, thickness: 25 },
-          { start: { x: 470, y: 850 }, end: { x: 470, y: 520 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.12, width: 100 },
-          { type: 'window', wall: 2, position: 0.3, width: 150 },
-          { type: 'window', wall: 2, position: 0.7, width: 150 },
-        ],
-      },
-      // ── Informatikraum (unten rechts) ──
-      {
-        id: 'informatik',
-        name: 'Informatikraum',
-        color: '#e8f0f5',
-        walls: [
-          { start: { x: 970, y: 520 }, end: { x: 1400, y: 520 }, thickness: 25 },
-          { start: { x: 1400, y: 520 }, end: { x: 1400, y: 850 }, thickness: 25 },
-          { start: { x: 1400, y: 850 }, end: { x: 970, y: 850 }, thickness: 25 },
-          { start: { x: 970, y: 850 }, end: { x: 970, y: 520 }, thickness: 25 },
-        ],
-        openings: [
-          { type: 'door', wall: 0, position: 0.15, width: 100 },
-          { type: 'window', wall: 1, position: 0.3, width: 150 },
-          { type: 'window', wall: 1, position: 0.7, width: 150 },
-        ],
-      },
-    ],
+    name: 'Neuer Grundriss',
+    scale: 1.5,
+    rooms: [],
   };
 }
 

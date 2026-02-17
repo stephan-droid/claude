@@ -302,6 +302,43 @@ style.textContent = `
   .catalog::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
   .catalog::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
+  /* ── Willkommens-Hinweis ── */
+  .welcome-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #999;
+    pointer-events: none;
+    user-select: none;
+    z-index: 10;
+  }
+
+  .welcome-hint h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  .welcome-hint p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #aaa;
+  }
+
+  .welcome-hint .shortcut {
+    display: inline-block;
+    background: #e8e8e8;
+    color: #666;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    margin: 0 2px;
+  }
+
   /* ── Zeichenmodus-Banner ── */
   .drawing-banner {
     position: absolute;
@@ -645,6 +682,33 @@ const statusbarEl = document.getElementById('statusbar')!;
 const searchInput = document.getElementById('searchInput') as HTMLInputElement;
 
 const renderer = new Renderer(canvas);
+
+// ─── Willkommens-Hinweis ─────────────────────────────────────
+let welcomeHintEl: HTMLElement | null = null;
+
+function updateWelcomeHint() {
+  const state = store.getState();
+  if (state.floorPlan.rooms.length === 0 && !isDrawing) {
+    if (!welcomeHintEl) {
+      welcomeHintEl = document.createElement('div');
+      welcomeHintEl.className = 'welcome-hint';
+      welcomeHintEl.innerHTML = `
+        <h2>Leere Zeichenfl\u00e4che</h2>
+        <p>
+          Klicke <span class="shortcut">W</span> oder den Button <strong>\u270f Zeichnen</strong>, um R\u00e4ume zu zeichnen.<br>
+          Oder nutze <strong>\u270f\ufe0f Grundriss</strong> im Men\u00fc, um R\u00e4ume \u00fcber das Formular anzulegen.<br>
+          Du kannst auch einen bestehenden Grundriss \u00fcber <strong>\ud83d\udcd0 Import</strong> laden.
+        </p>
+      `;
+      canvasContainer.appendChild(welcomeHintEl);
+    }
+  } else {
+    if (welcomeHintEl) {
+      welcomeHintEl.remove();
+      welcomeHintEl = null;
+    }
+  }
+}
 
 // ─── Katalog rendern ────────────────────────────────────────
 const collapsedCategories = new Set<FurnitureCategory>();
@@ -1253,6 +1317,7 @@ function startDrawing() {
   store.setTool('draw-wall');
   canvas.style.cursor = 'crosshair';
   showDrawingBanner();
+  updateWelcomeHint();
 }
 
 function cancelDrawing() {
@@ -1263,6 +1328,7 @@ function cancelDrawing() {
   store.setTool('select');
   canvas.style.cursor = 'default';
   hideDrawingBanner();
+  updateWelcomeHint();
 }
 
 function finishDrawing() {
@@ -1622,6 +1688,17 @@ document.addEventListener('keydown', (e) => {
 function fitZoom() {
   const state = store.getState();
   const scale = state.floorPlan.scale;
+
+  if (state.floorPlan.rooms.length === 0) {
+    // Leere Canvas: Standardansicht zentriert
+    store.setZoom(1);
+    store.setPanOffset({
+      x: canvasContainer.clientWidth / 2,
+      y: canvasContainer.clientHeight / 2,
+    });
+    return;
+  }
+
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const room of state.floorPlan.rooms) {
     for (const wall of room.walls) {
@@ -1656,12 +1733,14 @@ store.subscribe(() => {
   renderToolbar();
   renderProperties();
   renderStatusbar();
+  updateWelcomeHint();
 });
 
 // ─── Initialisierung ────────────────────────────────────────
 renderToolbar();
 renderProperties();
 renderStatusbar();
+updateWelcomeHint();
 requestAnimationFrame(renderLoop);
 
 // Beim Laden einpassen

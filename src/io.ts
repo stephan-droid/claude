@@ -82,6 +82,11 @@ export function exportAsSVG() {
   const state = store.getState();
   const scale = state.floorPlan.scale;
 
+  if (state.floorPlan.rooms.length === 0 && state.placedFurniture.length === 0) {
+    alert('Der Grundriss ist leer. Bitte zuerst Räume zeichnen.');
+    return;
+  }
+
   // Bounding Box berechnen
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const room of state.floorPlan.rooms) {
