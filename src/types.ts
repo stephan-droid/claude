@@ -44,6 +44,8 @@ export type FurnitureCategory =
   | 'kunst'
   | 'musik'
   | 'informatik'
+  | 'technik'
+  | 'aes'
   | 'sport'
   | 'verwaltung';
 
