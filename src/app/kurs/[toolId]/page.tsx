@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CourseTemplate, CourseProgress, QuestionnaireAnswers } from '@/lib/types'
@@ -9,8 +9,8 @@ import { getCourseForTool, roleLabels } from '@/data/courses'
 import { loadFromStorage, saveToStorage, calculateProgress, formatDuration, personalizeContent } from '@/lib/utils'
 import ProgressBar from '@/components/ui/ProgressBar'
 
-export default function KursDashboardPage({ params }: { params: Promise<{ toolId: string }> }) {
-  const { toolId } = use(params)
+export default function KursDashboardPage({ params }: { params: { toolId: string } }) {
+  const { toolId } = params
   const router = useRouter()
   const [course, setCourse] = useState<CourseTemplate | null>(null)
   const [progress, setProgress] = useState<CourseProgress | null>(null)

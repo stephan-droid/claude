@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CourseTemplate, CourseProgress, QuestionnaireAnswers, Lesson, CourseModule } from '@/lib/types'
@@ -12,9 +12,9 @@ import LessonContent from '@/components/kurs/LessonContent'
 export default function LessonPage({
   params,
 }: {
-  params: Promise<{ toolId: string; moduleId: string }>
+  params: { toolId: string; moduleId: string }
 }) {
-  const { toolId, moduleId } = use(params)
+  const { toolId, moduleId } = params
   const router = useRouter()
   const searchParams = useSearchParams()
   const lessonId = searchParams.get('lesson')
