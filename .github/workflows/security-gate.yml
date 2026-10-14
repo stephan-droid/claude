@@ -1,0 +1,23 @@
+name: Security Gate
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit npm dependencies when lockfile exists
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm audit --package-lock-only --omit=dev --audit-level=high
+          else
+            echo 'No npm lockfile: dependency audit not applicable; manual review required.'
+          fi
